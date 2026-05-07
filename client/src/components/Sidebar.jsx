@@ -7,7 +7,7 @@ import { useChat } from "../context/ChatContext";
 
 export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, className = "" }) {
   const { user, logout } = useAuth();
-  const { chats, openChat, activeChat, presence, autoLocked } = useChat();
+  const { chats, openChat, activeChat, presence, autoLocked, updateChat } = useChat();
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
   const [archivedOnly, setArchivedOnly] = useState(false);
@@ -103,6 +103,18 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
                   {locked && <Lock size={14} />}
                 </div>
                 <p className="truncate text-sm opacity-70">{chat.lastMessage?.text || "No messages yet"}</p>
+                {archivedOnly && (
+                  <span
+                    onClick={async (event) => {
+                      event.stopPropagation();
+                      const { data } = await api.patch(`/chats/${chat._id}/action`, { action: "archive" });
+                      updateChat(chat._id, data.chat);
+                    }}
+                    className="mt-2 inline-flex rounded-lg bg-white/20 px-2 py-1 text-xs"
+                  >
+                    Unarchive
+                  </span>
+                )}
               </div>
             </motion.button>
           );

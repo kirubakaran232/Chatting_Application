@@ -126,6 +126,23 @@ export function ChatProvider({ children }) {
     );
   }
 
+  async function reactToMessage(messageId, emoji) {
+    await api.patch(`/messages/${messageId}/reaction`, { emoji });
+    setMessages((items) =>
+      items.map((message) =>
+        message._id === messageId
+          ? {
+              ...message,
+              reactions: [
+                ...(message.reactions || []).filter((reaction) => String(reaction.user?._id || reaction.user) !== String(user._id)),
+                { emoji, user: user._id }
+              ]
+            }
+          : message
+      )
+    );
+  }
+
   async function uploadFile(file) {
     const form = new FormData();
     form.append("file", file);
@@ -134,7 +151,7 @@ export function ChatProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ socket, chats, setChats, activeChat, messages, typingUsers, presence, autoLocked, openChat, sendMessage, uploadFile, chatAction, updateChat, deleteMessageForMe, deleteMessageForEveryone }),
+    () => ({ socket, chats, setChats, activeChat, messages, typingUsers, presence, autoLocked, openChat, sendMessage, uploadFile, chatAction, updateChat, deleteMessageForMe, deleteMessageForEveryone, reactToMessage }),
     [socket, chats, activeChat, messages, typingUsers, presence, autoLocked]
   );
 

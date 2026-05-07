@@ -1,5 +1,5 @@
 import EmojiPicker from "emoji-picker-react";
-import { Archive, ArrowLeft, Ban, Bot, CheckCheck, Flag, Image, Languages, Lock, Mic, MoreVertical, Paperclip, Phone, Pin, ScreenShare, Send, Smile, Sparkles, Trash2, Unlock, Video, X } from "lucide-react";
+import { Archive, ArrowLeft, Ban, Bot, CheckCheck, Flag, Image, Languages, Lock, Mic, MoreVertical, Paperclip, Phone, Pin, ScreenShare, Send, Smile, Sparkles, Square, Trash2, Unlock, Video, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
@@ -11,7 +11,7 @@ import { StoriesBar } from "./StoriesBar";
 
 export function ChatWindow({ onBack, className = "" }) {
   const { user } = useAuth();
-  const { activeChat, messages, sendMessage, uploadFile, socket, typingUsers, autoLocked, chatAction, updateChat, deleteMessageForMe, deleteMessageForEveryone } = useChat();
+  const { activeChat, messages, sendMessage, uploadFile, socket, typingUsers, autoLocked, chatAction, updateChat, deleteMessageForMe, deleteMessageForEveryone, reactToMessage } = useChat();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
@@ -25,11 +25,15 @@ export function ChatWindow({ onBack, className = "" }) {
   const [unlocked, setUnlocked] = useState(false);
   const [aiPanel, setAiPanel] = useState("");
   const [sending, setSending] = useState(false);
+  const [recording, setRecording] = useState(false);
   const bottom = useRef(null);
+  const recorderRef = useRef(null);
+  const chunksRef = useRef([]);
 
   const other = activeChat?.members?.find((member) => member._id !== user._id) || activeChat?.members?.[0];
   const title = activeChat?.type === "group" ? activeChat?.name : other?.displayName;
   const locked = activeChat?.lockedBy?.some((item) => item.user === user._id || item.user?._id === user._id);
+  const archived = activeChat?.archivedBy?.some((id) => id === user._id || id?._id === user._id);
   const needsPin = activeChat && (locked || autoLocked) && !unlocked;
 
   useEffect(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
@@ -47,6 +51,16 @@ export function ChatWindow({ onBack, className = "" }) {
   function isImageAttachment(file) {
     const value = `${file.type || ""} ${file.format || ""} ${file.name || ""} ${file.url || ""}`.toLowerCase();
     return file.type === "image" || /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(value) || ["jpg", "jpeg", "png", "webp", "gif", "avif"].some((format) => value.includes(format));
+  }
+
+  function isAudioAttachment(file) {
+    const value = `${file.type || ""} ${file.format || ""} ${file.name || ""} ${file.url || ""}`.toLowerCase();
+    return file.type === "audio" || /\.(webm|mp3|wav|m4a|ogg)(\?|$)/i.test(value);
+  }
+
+  function isVideoAttachment(file) {
+    const value = `${file.type || ""} ${file.format || ""} ${file.name || ""} ${file.url || ""}`.toLowerCase();
+    return file.type === "video" || /\.(mp4|mov|webm|mkv)(\?|$)/i.test(value);
   }
 
   async function submit(e) {
@@ -138,6 +152,43 @@ export function ChatWindow({ onBack, className = "" }) {
     }
   }
 
+  async function toggleVoiceRecording() {
+    if (recording) {
+      recorderRef.current?.stop();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      toast.error("Voice recording is not supported in this browser");
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunksRef.current = [];
+      const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : undefined });
+      recorderRef.current = recorder;
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
+      recorder.onstop = async () => {
+        setRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
+        try {
+          const attachment = await uploadFile(file);
+          await sendMessage({ text: "", attachments: [attachment] });
+          toast.success("Voice message sent");
+        } catch (error) {
+          toast.error(error.response?.data?.message || "Voice message failed");
+        }
+      };
+      recorder.start();
+      setRecording(true);
+    } catch {
+      toast.error("Microphone permission was blocked");
+    }
+  }
+
   if (!activeChat) {
     return (
       <main className="hidden flex-1 place-items-center md:grid">
@@ -185,8 +236,12 @@ export function ChatWindow({ onBack, className = "" }) {
           <button onClick={() => setMenuOpen((open) => !open)} className="grid h-10 w-10 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="More"><MoreVertical size={19} /></button>
           {menuOpen && (
             <div className="glass absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
+              <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
+                <span>Options</span>
+                <button onClick={() => setMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
+              </div>
               <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> Pin chat</button>
-              <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> Archive chat</button>
+              <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> {archived ? "Unarchive chat" : "Archive chat"}</button>
               <button onClick={() => { setLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Lock size={16} /> Lock chat</button>
               <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
               {locked && <button onClick={() => { setRemoveLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Unlock size={16} /> Remove lock</button>}
@@ -250,17 +305,32 @@ export function ChatWindow({ onBack, className = "" }) {
                   {message.deletedForEveryone ? <em>This message was deleted</em> : <p className="whitespace-pre-wrap break-words">{message.text}</p>}
                   {message.attachments?.map((file) => (
                     <a key={file.url} href={file.url} target="_blank" className="mt-2 block overflow-hidden rounded-xl border border-white/20" rel="noreferrer">
-                      {isImageAttachment(file) ? <img src={file.url} alt={file.name} className="max-h-72 w-full object-cover" /> : <span className="flex items-center gap-2 p-3"><Paperclip size={16} /> {file.name}</span>}
+                      {isImageAttachment(file) ? (
+                        <img src={file.url} alt={file.name} className="max-h-72 w-full object-cover" />
+                      ) : isAudioAttachment(file) ? (
+                        <audio src={file.url} controls className="w-64 max-w-full p-2" />
+                      ) : isVideoAttachment(file) ? (
+                        <video src={file.url} controls className="max-h-72 w-full object-cover" />
+                      ) : (
+                        <span className="flex items-center gap-2 p-3"><Paperclip size={16} /> {file.name}</span>
+                      )}
                     </a>
                   ))}
                   <div className="mt-1 flex items-center justify-end gap-2 text-[11px] opacity-70">
                     <button onClick={() => setReplyTo(message)}>Reply</button>
-                    <button onClick={() => api.patch(`/messages/${message._id}/reaction`, { emoji: "\u2764\ufe0f" })}>React</button>
+                    <button onClick={() => reactToMessage(message._id, "\u2764\ufe0f")}>React</button>
                     <button onClick={() => deleteMessageForMe(message._id)} title="Delete for me">Delete me</button>
                     {mine && <button onClick={() => deleteMessageForEveryone(message._id)} className="inline-flex items-center gap-1" title="Delete for everyone"><Trash2 size={12} /> All</button>}
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>
                     {mine && <CheckCheck size={13} />}
                   </div>
+                  {message.reactions?.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {message.reactions.map((reaction, index) => (
+                        <span key={`${reaction.emoji}-${index}`} className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/10">{reaction.emoji}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             );
@@ -269,15 +339,18 @@ export function ChatWindow({ onBack, className = "" }) {
         <div ref={bottom} />
       </div>
 
-      {aiPanel && <div className="mx-4 mb-2 rounded-xl border border-teal-400/30 bg-teal-50 p-3 text-sm text-slate-700 dark:bg-teal-950/50 dark:text-teal-50">{aiPanel}</div>}
+      {aiPanel && <div className="mx-4 mb-2 flex items-start gap-2 rounded-xl border border-teal-400/30 bg-teal-50 p-3 text-sm text-slate-700 dark:bg-teal-950/50 dark:text-teal-50"><span className="flex-1">{aiPanel}</span><button onClick={() => setAiPanel("")} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={15} /></button></div>}
       {replyTo && <div className="mx-4 mb-2 rounded-xl bg-white/70 px-4 py-2 text-sm dark:bg-white/10">Replying to {replyTo.sender?.displayName}: {replyTo.text}<button className="ml-3 text-teal-500" onClick={() => setReplyTo(null)}>cancel</button></div>}
       {attachments.length > 0 && (
         <div className="mx-4 mb-2 flex gap-2 overflow-x-auto">
-          {attachments.map((file) =>
+          {attachments.map((file, index) =>
             isImageAttachment(file) ? (
-              <img key={file.url} src={file.url} alt={file.name} className="h-20 w-20 rounded-xl object-cover" />
+              <div key={file.url} className="relative shrink-0">
+                <img src={file.url} alt={file.name} className="h-20 w-20 rounded-xl object-cover" />
+                <button onClick={() => setAttachments((items) => items.filter((_, itemIndex) => itemIndex !== index))} className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-white"><X size={12} /></button>
+              </div>
             ) : (
-              <span key={file.url} className="inline-flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-white/10"><Image size={15} />{file.name}</span>
+              <span key={file.url} className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-white/10"><Image size={15} />{file.name}<button onClick={() => setAttachments((items) => items.filter((_, itemIndex) => itemIndex !== index))}><X size={13} /></button></span>
             )
           )}
         </div>
@@ -288,10 +361,17 @@ export function ChatWindow({ onBack, className = "" }) {
           <Paperclip size={20} />
           <input type="file" multiple hidden onChange={(e) => onFiles([...e.target.files])} />
         </label>
-        <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Voice"><Mic size={20} /></button>
+        <button type="button" onClick={toggleVoiceRecording} className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${recording ? "bg-teal-500 text-white" : ""}`} title={recording ? "Stop recording" : "Voice"}>
+          {recording ? <Square size={18} /> : <Mic size={20} />}
+        </button>
         <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Emoji" onClick={() => setEmojiOpen(!emojiOpen)}><Smile size={20} /></button>
         <div className="relative order-first w-full sm:order-none sm:flex-1">
-          {emojiOpen && <div className="absolute bottom-12 left-0 z-10 max-w-[92vw] overflow-hidden rounded-xl"><EmojiPicker width={320} onEmojiClick={(e) => setText((x) => x + e.emoji)} /></div>}
+          {emojiOpen && (
+            <div className="absolute bottom-12 left-0 z-10 max-w-[92vw] overflow-hidden rounded-xl">
+              <button type="button" onClick={() => setEmojiOpen(false)} className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"><X size={15} /></button>
+              <EmojiPicker width={320} onEmojiClick={(e) => setText((x) => x + e.emoji)} />
+            </div>
+          )}
           <input
             value={text}
             onChange={(e) => {

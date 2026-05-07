@@ -57,12 +57,12 @@ export function StoriesBar() {
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto border-b border-black/5 px-3 py-3 dark:border-white/10 sm:px-4">
-      <button onClick={() => setOpen(true)} className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-teal-500 text-white">
-        <Plus size={22} />
+    <div className="flex gap-2 overflow-x-auto border-b border-black/5 px-3 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3">
+      <button onClick={() => setOpen(true)} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-teal-500 text-white sm:h-16 sm:w-16" title="Add story">
+        <Plus size={20} />
       </button>
       {stories.map((story) => (
-        <div key={story._id} className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-pink-400">
+        <div key={story._id} className="group relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border-2 border-pink-400 sm:h-16 sm:w-16">
           {story.type === "text" ? (
             <span className="grid h-full place-items-center bg-teal-500 px-1 text-center text-xs font-semibold text-white">{story.text}</span>
           ) : story.type === "video" ? (
@@ -99,6 +99,7 @@ export function StoriesBar() {
               )}
               <input type="file" accept="image/*,video/*" hidden onChange={(event) => onFile(event.target.files?.[0])} />
             </label>
+            {media && <button type="button" onClick={() => setMedia(null)} className="mt-2 inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"><X size={15} /> Remove media</button>}
             <textarea value={text} onChange={(event) => setText(event.target.value)} className="mt-3 min-h-24 w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10" placeholder="Description or text story" />
             <button disabled={uploading} className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white disabled:opacity-60">Post story</button>
           </form>
