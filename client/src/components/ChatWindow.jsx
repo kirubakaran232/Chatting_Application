@@ -1,5 +1,5 @@
 import EmojiPicker from "emoji-picker-react";
-import { Archive, ArrowLeft, Ban, Bot, CheckCheck, Flag, Languages, Lock, Mic, MoreVertical, Paperclip, Phone, Pin, ScreenShare, Send, Smile, Sparkles, Trash2, Video, X } from "lucide-react";
+import { Archive, ArrowLeft, Ban, Bot, CheckCheck, Flag, Image, Languages, Lock, Mic, MoreVertical, Paperclip, Phone, Pin, ScreenShare, Send, Smile, Sparkles, Trash2, Unlock, Video, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
@@ -19,6 +19,8 @@ export function ChatWindow({ onBack, className = "" }) {
   const [pin, setPin] = useState("");
   const [lockPin, setLockPin] = useState("");
   const [lockModalOpen, setLockModalOpen] = useState(false);
+  const [removeLockModalOpen, setRemoveLockModalOpen] = useState(false);
+  const [removeLockPin, setRemoveLockPin] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [aiPanel, setAiPanel] = useState("");
@@ -36,9 +38,16 @@ export function ChatWindow({ onBack, className = "" }) {
     setUnlocked(false);
     setMenuOpen(false);
     setLockModalOpen(false);
+    setRemoveLockModalOpen(false);
     setPin("");
     setLockPin("");
+    setRemoveLockPin("");
   }, [activeChat?._id]);
+
+  function isImageAttachment(file) {
+    const value = `${file.type || ""} ${file.format || ""} ${file.name || ""} ${file.url || ""}`.toLowerCase();
+    return file.type === "image" || /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(value) || ["jpg", "jpeg", "png", "webp", "gif", "avif"].some((format) => value.includes(format));
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -91,6 +100,21 @@ export function ChatWindow({ onBack, className = "" }) {
       toast.success("Chat locked");
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not lock chat");
+    }
+  }
+
+  async function removeLock(e) {
+    e.preventDefault();
+    if (!removeLockPin) return toast.error("Enter the PIN");
+    try {
+      const { data } = await api.delete(`/chats/${activeChat._id}/lock`, { data: { pin: removeLockPin } });
+      updateChat(activeChat._id, data.chat);
+      setUnlocked(true);
+      setRemoveLockPin("");
+      setRemoveLockModalOpen(false);
+      toast.success("Chat unlocked permanently");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid PIN");
     }
   }
 
@@ -163,6 +187,7 @@ export function ChatWindow({ onBack, className = "" }) {
             <div className="glass absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
               <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> Pin chat</button>
               <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> Archive chat</button>
+              {locked && <button onClick={() => { setRemoveLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Unlock size={16} /> Remove lock</button>}
               <button onClick={() => aiAction("summarize")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Bot size={16} /> AI summary</button>
               <button onClick={() => runMenuAction("report")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Flag size={16} /> Report chat</button>
               {activeChat.type === "direct" && <button onClick={() => runMenuAction("block")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Ban size={16} /> Block user</button>}
@@ -187,6 +212,22 @@ export function ChatWindow({ onBack, className = "" }) {
         </div>
       )}
 
+      {removeLockModalOpen && (
+        <div className="fixed inset-0 z-30 grid place-items-center bg-black/55 p-4">
+          <form onSubmit={removeLock} className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Remove chat lock</h2>
+                <p className="mt-1 text-sm text-slate-500">Enter your PIN once to permanently unlock this chat.</p>
+              </div>
+              <button type="button" onClick={() => setRemoveLockModalOpen(false)} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"><X size={18} /></button>
+            </div>
+            <input value={removeLockPin} onChange={(e) => setRemoveLockPin(e.target.value)} type="password" inputMode="numeric" className="mt-5 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center outline-none dark:border-white/10 dark:bg-white/10" placeholder="PIN" />
+            <button className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">Remove lock</button>
+          </form>
+        </div>
+      )}
+
       <StoriesBar />
 
       <div
@@ -207,7 +248,7 @@ export function ChatWindow({ onBack, className = "" }) {
                   {message.deletedForEveryone ? <em>This message was deleted</em> : <p className="whitespace-pre-wrap break-words">{message.text}</p>}
                   {message.attachments?.map((file) => (
                     <a key={file.url} href={file.url} target="_blank" className="mt-2 block overflow-hidden rounded-xl border border-white/20" rel="noreferrer">
-                      {file.type === "image" ? <img src={file.url} alt={file.name} className="max-h-72 w-full object-cover" /> : <span className="flex items-center gap-2 p-3"><Paperclip size={16} /> {file.name}</span>}
+                      {isImageAttachment(file) ? <img src={file.url} alt={file.name} className="max-h-72 w-full object-cover" /> : <span className="flex items-center gap-2 p-3"><Paperclip size={16} /> {file.name}</span>}
                     </a>
                   ))}
                   <div className="mt-1 flex items-center justify-end gap-2 text-[11px] opacity-70">
@@ -227,7 +268,17 @@ export function ChatWindow({ onBack, className = "" }) {
 
       {aiPanel && <div className="mx-4 mb-2 rounded-xl border border-teal-400/30 bg-teal-50 p-3 text-sm text-slate-700 dark:bg-teal-950/50 dark:text-teal-50">{aiPanel}</div>}
       {replyTo && <div className="mx-4 mb-2 rounded-xl bg-white/70 px-4 py-2 text-sm dark:bg-white/10">Replying to {replyTo.sender?.displayName}: {replyTo.text}<button className="ml-3 text-teal-500" onClick={() => setReplyTo(null)}>cancel</button></div>}
-      {attachments.length > 0 && <div className="mx-4 mb-2 flex gap-2 overflow-x-auto">{attachments.map((file) => <span key={file.url} className="rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-white/10">{file.name}</span>)}</div>}
+      {attachments.length > 0 && (
+        <div className="mx-4 mb-2 flex gap-2 overflow-x-auto">
+          {attachments.map((file) =>
+            isImageAttachment(file) ? (
+              <img key={file.url} src={file.url} alt={file.name} className="h-20 w-20 rounded-xl object-cover" />
+            ) : (
+              <span key={file.url} className="inline-flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-white/10"><Image size={15} />{file.name}</span>
+            )
+          )}
+        </div>
+      )}
 
       <form onSubmit={submit} className="glass m-2 flex flex-wrap items-center gap-2 rounded-2xl p-2 sm:m-3 sm:flex-nowrap sm:p-3">
         <label className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Attach">

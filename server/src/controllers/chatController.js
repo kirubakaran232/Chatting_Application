@@ -68,6 +68,18 @@ export const unlockChat = asyncHandler(async (req, res) => {
   res.json({ message: "Unlocked" });
 });
 
+export const removeChatLock = asyncHandler(async (req, res) => {
+  const chat = await Chat.findOne({ _id: req.params.chatId, members: req.user._id });
+  const lock = chat?.lockedBy.find((item) => item.user.toString() === req.user._id.toString());
+  if (!lock || !(await bcrypt.compare(String(req.body.pin), lock.pinHash))) {
+    return res.status(401).json({ message: "Invalid PIN" });
+  }
+  chat.lockedBy = chat.lockedBy.filter((item) => item.user.toString() !== req.user._id.toString());
+  await chat.save();
+  await chat.populate("members", "username displayName avatar status lastSeen");
+  res.json({ message: "Chat unlocked permanently", chat });
+});
+
 export const chatAction = asyncHandler(async (req, res) => {
   const field = { pin: "pinnedBy", archive: "archivedBy", report: "reportedBy" }[req.body.action];
   if (!field) return res.status(422).json({ message: "Unsupported action" });

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { chatAction, createGroup, getMessages, listChats, lockChat, startDirectChat, unlockChat } from "../controllers/chatController.js";
+import { chatAction, createGroup, getMessages, listChats, lockChat, removeChatLock, startDirectChat, unlockChat } from "../controllers/chatController.js";
 import { sendMessage } from "../controllers/messageController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -13,4 +13,5 @@ chatRoutes.get("/:chatId/messages", getMessages);
 chatRoutes.post("/:chatId/messages", sendMessage);
 chatRoutes.post("/:chatId/lock", lockChat);
 chatRoutes.post("/:chatId/unlock", unlockChat);
+chatRoutes.delete("/:chatId/lock", removeChatLock);
 chatRoutes.patch("/:chatId/action", chatAction);

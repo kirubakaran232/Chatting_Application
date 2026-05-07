@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const searchUsers = asyncHandler(async (req, res) => {
   const q = String(req.query.q || "").toLowerCase();
+  if (q.trim().length < 2) return res.json({ users: [] });
   const users = await User.find({
     _id: { $ne: req.user._id },
     $or: [{ username: new RegExp(q, "i") }, { displayName: new RegExp(q, "i") }]
