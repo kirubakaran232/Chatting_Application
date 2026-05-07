@@ -432,40 +432,152 @@ export function ChatWindow({ onBack, className = "" }) {
     <main className={`${className} min-w-0 flex-1 flex-col`}>
       {/* Sticky header stays visible on real mobile browsers without being hidden/clipped. */}
       <div className="glass sticky top-0 z-30 flex min-h-16 w-full min-w-0 items-center gap-2 overflow-visible border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
-        <button onClick={onBack} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden" title="Back to chats">
+        <button
+          onClick={onBack}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden"
+          title="Back to chats"
+        >
           <ArrowLeft size={20} />
         </button>
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden sm:gap-3 max-[380px]:gap-1.5">
-          <img className="h-9 w-9 shrink-0 rounded-full object-cover sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9" src={activeChat.avatar || other?.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${title}`} alt="" />
+          <img
+            className="h-9 w-9 shrink-0 rounded-full object-cover sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9"
+            src={
+              activeChat.avatar ||
+              other?.avatar ||
+              `https://api.dicebear.com/8.x/initials/svg?seed=${title}`
+            }
+            alt=""
+          />
           <div className="min-w-0 flex-1 overflow-hidden">
-            <p className="truncate text-[15px] font-semibold text-slate-900 dark:text-white sm:text-base">{title || "Chat"}</p>
-            <p className="truncate text-xs text-slate-500 sm:text-sm">{typingUsers[activeChat._id] ? `${typingUsers[activeChat._id].displayName} is typing...` : activeChat.type}</p>
+            <p className="truncate text-[15px] font-semibold text-slate-900 dark:text-white sm:text-base">
+              {title || "Chat"}
+            </p>
+            <p className="truncate text-xs text-slate-500 sm:text-sm">
+              {typingUsers[activeChat._id]
+                ? `${typingUsers[activeChat._id].displayName} is typing...`
+                : activeChat.type}
+            </p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button onClick={() => startOutgoingCall("audio")} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
-          <button onClick={() => startOutgoingCall("video")} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Video call"><Video size={19} /></button>
-          <button onClick={() => startOutgoingCall("screen")} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Screen share"><ScreenShare size={19} /></button>
-          <button onClick={() => setLockModalOpen(true)} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Lock chat"><Lock size={19} /></button>
+          <button
+            onClick={() => startOutgoingCall("audio")}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+            title="Voice call"
+          >
+            <Phone size={19} />
+          </button>
+          <button
+            onClick={() => startOutgoingCall("video")}
+            className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid"
+            title="Video call"
+          >
+            <Video size={19} />
+          </button>
+          <button
+            onClick={() => startOutgoingCall("screen")}
+            className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid"
+            title="Screen share"
+          >
+            <ScreenShare size={19} />
+          </button>
+          <button
+            onClick={() => setLockModalOpen(true)}
+            className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid"
+            title="Lock chat"
+          >
+            <Lock size={19} />
+          </button>
         </div>
         <div className="relative shrink-0">
-          <button onClick={() => setMenuOpen((open) => !open)} className="grid h-10 w-10 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="More"><MoreVertical size={19} /></button>
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            className="grid h-10 w-10 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
+            title="More"
+          >
+            <MoreVertical size={19} />
+          </button>
           {menuOpen && (
             <>
-              <div ref={menuRef} className="glass absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
+              <div
+                ref={menuRef}
+                className="glass absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl"
+              >
                 <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
                   <span>Options</span>
-                  <button onClick={() => setMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
-                <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> {pinned ? "Unpin chat" : "Pin chat"}</button>
-                <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> {archived ? "Unarchive chat" : "Archive chat"}</button>
-                <button onClick={() => { setLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Lock size={16} /> Lock chat</button>
-                <button onClick={() => startOutgoingCall("video")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
-                <button onClick={() => startOutgoingCall("screen")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><ScreenShare size={16} /> Share screen</button>
-                {locked && <button onClick={() => { setRemoveLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Unlock size={16} /> Remove lock</button>}
-                <button onClick={() => aiAction("summarize")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Bot size={16} /> AI summary</button>
-                <button onClick={() => runMenuAction("report")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Flag size={16} /> Report chat</button>
-                {activeChat.type === "direct" && <button onClick={() => runMenuAction("block")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Ban size={16} /> Block user</button>}
+                <button
+                  onClick={() => runMenuAction("pin")}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <Pin size={16} /> {pinned ? "Unpin chat" : "Pin chat"}
+                </button>
+                <button
+                  onClick={() => runMenuAction("archive")}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <Archive size={16} />{" "}
+                  {archived ? "Unarchive chat" : "Archive chat"}
+                </button>
+                <button
+                  onClick={() => {
+                    setLockModalOpen(true);
+                    setMenuOpen(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <Lock size={16} /> Lock chat
+                </button>
+                <button
+                  onClick={() => startOutgoingCall("video")}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"
+                >
+                  <Video size={16} /> Video call
+                </button>
+                <button
+                  onClick={() => startOutgoingCall("screen")}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"
+                >
+                  <ScreenShare size={16} /> Share screen
+                </button>
+                {locked && (
+                  <button
+                    onClick={() => {
+                      setRemoveLockModalOpen(true);
+                      setMenuOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                  >
+                    <Unlock size={16} /> Remove lock
+                  </button>
+                )}
+                <button
+                  onClick={() => aiAction("summarize")}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <Bot size={16} /> AI summary
+                </button>
+                <button
+                  onClick={() => runMenuAction("report")}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <Flag size={16} /> Report chat
+                </button>
+                {activeChat.type === "direct" && (
+                  <button
+                    onClick={() => runMenuAction("block")}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+                  >
+                    <Ban size={16} /> Block user
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -474,32 +586,76 @@ export function ChatWindow({ onBack, className = "" }) {
 
       {lockModalOpen && (
         <div className="fixed inset-0 z-30 grid place-items-center bg-black/55 p-4">
-          <form onSubmit={lockChat} className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow">
+          <form
+            onSubmit={lockChat}
+            className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow"
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Lock this chat</h2>
-                <p className="mt-1 text-sm text-slate-500">Create a PIN to hide this chat preview and messages.</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Lock this chat
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Create a PIN to hide this chat preview and messages.
+                </p>
               </div>
-              <button type="button" onClick={() => setLockModalOpen(false)} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"><X size={18} /></button>
+              <button
+                type="button"
+                onClick={() => setLockModalOpen(false)}
+                className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <input value={lockPin} onChange={(e) => setLockPin(e.target.value)} type="password" inputMode="numeric" className="mt-5 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center outline-none dark:border-white/10 dark:bg-white/10" placeholder="Enter at least 4 digits" />
-            <button className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">Save PIN</button>
+            <input
+              value={lockPin}
+              onChange={(e) => setLockPin(e.target.value)}
+              type="password"
+              inputMode="numeric"
+              className="mt-5 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center outline-none dark:border-white/10 dark:bg-white/10"
+              placeholder="Enter at least 4 digits"
+            />
+            <button className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">
+              Save PIN
+            </button>
           </form>
         </div>
       )}
 
       {removeLockModalOpen && (
         <div className="fixed inset-0 z-30 grid place-items-center bg-black/55 p-4">
-          <form onSubmit={removeLock} className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow">
+          <form
+            onSubmit={removeLock}
+            className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow"
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Remove chat lock</h2>
-                <p className="mt-1 text-sm text-slate-500">Enter your PIN once to permanently unlock this chat.</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Remove chat lock
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Enter your PIN once to permanently unlock this chat.
+                </p>
               </div>
-              <button type="button" onClick={() => setRemoveLockModalOpen(false)} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"><X size={18} /></button>
+              <button
+                type="button"
+                onClick={() => setRemoveLockModalOpen(false)}
+                className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <input value={removeLockPin} onChange={(e) => setRemoveLockPin(e.target.value)} type="password" inputMode="numeric" className="mt-5 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center outline-none dark:border-white/10 dark:bg-white/10" placeholder="PIN" />
-            <button className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">Remove lock</button>
+            <input
+              value={removeLockPin}
+              onChange={(e) => setRemoveLockPin(e.target.value)}
+              type="password"
+              inputMode="numeric"
+              className="mt-5 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center outline-none dark:border-white/10 dark:bg-white/10"
+              placeholder="PIN"
+            />
+            <button className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">
+              Remove lock
+            </button>
           </form>
         </div>
       )}
@@ -509,7 +665,9 @@ export function ChatWindow({ onBack, className = "" }) {
           <div className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Voice call</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Voice call
+                </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {callStatus === "calling" && "Calling..."}
                   {callStatus === "incoming" && "Incoming call"}
@@ -517,41 +675,95 @@ export function ChatWindow({ onBack, className = "" }) {
                   {callStatus === "idle" && "Ready"}
                 </p>
               </div>
-              <button onClick={endCall} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Close"><X size={18} /></button>
+              <button
+                onClick={endCall}
+                className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
             </div>
             <audio ref={remoteAudioRef} autoPlay />
             <div className="mt-3 grid grid-cols-1 gap-2">
               {callKind !== "audio" && (
                 <div className="grid grid-cols-2 gap-2">
-                  <video ref={localVideoRef} autoPlay muted playsInline className="aspect-video w-full rounded-xl bg-black/30 object-cover" />
-                  <video ref={remoteVideoRef} autoPlay playsInline className="aspect-video w-full rounded-xl bg-black/30 object-cover" />
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="aspect-video w-full rounded-xl bg-black/30 object-cover"
+                  />
+                  <video
+                    ref={remoteVideoRef}
+                    autoPlay
+                    playsInline
+                    className="aspect-video w-full rounded-xl bg-black/30 object-cover"
+                  />
                 </div>
               )}
             </div>
             <div className="mt-4 flex gap-2">
               {callStatus === "incoming" && (
                 <>
-                  <button onClick={acceptIncomingCall} className="flex-1 rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">Accept</button>
-                  <button onClick={endCall} className="flex-1 rounded-xl bg-white/20 px-4 py-3 font-semibold">Decline</button>
+                  <button
+                    onClick={acceptIncomingCall}
+                    className="flex-1 rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={endCall}
+                    className="flex-1 rounded-xl bg-white/20 px-4 py-3 font-semibold"
+                  >
+                    Decline
+                  </button>
                 </>
               )}
-              {callStatus === "calling" && <button onClick={endCall} className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold">Cancel</button>}
+              {callStatus === "calling" && (
+                <button
+                  onClick={endCall}
+                  className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold"
+                >
+                  Cancel
+                </button>
+              )}
               {callStatus === "in-call" && (
                 <>
-                  <button onClick={toggleMute} className={`flex-1 rounded-xl px-4 py-3 font-semibold ${muted ? "bg-teal-500 text-white" : "bg-white/20"}`}>{muted ? "Unmute" : "Mute"}</button>
-                  <button onClick={endCall} className="flex-1 rounded-xl bg-white/20 px-4 py-3 font-semibold">Hang up</button>
+                  <button
+                    onClick={toggleMute}
+                    className={`flex-1 rounded-xl px-4 py-3 font-semibold ${muted ? "bg-teal-500 text-white" : "bg-white/20"}`}
+                  >
+                    {muted ? "Unmute" : "Mute"}
+                  </button>
+                  <button
+                    onClick={endCall}
+                    className="flex-1 rounded-xl bg-white/20 px-4 py-3 font-semibold"
+                  >
+                    Hang up
+                  </button>
                 </>
               )}
-              {callStatus === "idle" && <button onClick={() => setCallOpen(false)} className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold">Close</button>}
+              {callStatus === "idle" && (
+                <button
+                  onClick={() => setCallOpen(false)}
+                  className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold"
+                >
+                  Close
+                </button>
+              )}
             </div>
-            <p className="mt-3 text-xs text-slate-500">Note: works best on Wi‑Fi; some networks need TURN for reliability.</p>
+            <p className="mt-3 text-xs text-slate-500">
+              Note: works best on Wi‑Fi; some networks need TURN for
+              reliability.
+            </p>
           </div>
         </div>
       )}
 
       <div
         className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4"
-        onDragOver={(e) => e.preventDefault()}
+       onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
           onFiles([...e.dataTransfer.files]);
@@ -561,20 +773,57 @@ export function ChatWindow({ onBack, className = "" }) {
           {messages.map((message) => {
             const mine = message.sender?._id === user._id;
             return (
-              <motion.div key={message._id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`mb-3 flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[86%] rounded-2xl px-3 py-2 shadow-sm sm:max-w-[78%] sm:px-4 ${mine ? "rounded-br-sm bg-teal-500 text-white" : "rounded-bl-sm bg-white/80 text-slate-900 dark:bg-white/10 dark:text-white"}`}>
-                  {message.replyTo && <div className="mb-2 rounded-lg bg-black/10 px-3 py-2 text-xs opacity-80">Replying to: {message.replyTo.text}</div>}
-                  {message.deletedForEveryone ? <em>This message was deleted</em> : <p className="whitespace-pre-wrap break-words">{message.text}</p>}
+              <motion.div
+                key={message._id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`mb-3 flex ${mine ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[86%] rounded-2xl px-3 py-2 shadow-sm sm:max-w-[78%] sm:px-4 ${mine ? "rounded-br-sm bg-teal-500 text-white" : "rounded-bl-sm bg-white/80 text-slate-900 dark:bg-white/10 dark:text-white"}`}
+                >
+                  {message.replyTo && (
+                    <div className="mb-2 rounded-lg bg-black/10 px-3 py-2 text-xs opacity-80">
+                      Replying to: {message.replyTo.text}
+                    </div>
+                  )}
+                  {message.deletedForEveryone ? (
+                    <em>This message was deleted</em>
+                  ) : (
+                    <p className="whitespace-pre-wrap break-words">
+                      {message.text}
+                    </p>
+                  )}
                   {message.attachments?.map((file) => (
-                    <a key={file.url} href={file.url} target="_blank" className="mt-2 block overflow-hidden rounded-xl border border-white/20" rel="noreferrer">
+                    <a
+                      key={file.url}
+                      href={file.url}
+                      target="_blank"
+                      className="mt-2 block overflow-hidden rounded-xl border border-white/20"
+                      rel="noreferrer"
+                    >
                       {isImageAttachment(file) ? (
-                        <img src={file.url} alt={file.name} className="max-h-72 w-full object-cover" />
+                        <img
+                          src={file.url}
+                          alt={file.name}
+                          className="max-h-72 w-full object-cover"
+                        />
                       ) : isAudioAttachment(file) ? (
-                        <audio src={file.url} controls className="w-64 max-w-full p-2" />
+                        <audio
+                          src={file.url}
+                          controls
+                          className="w-64 max-w-full p-2"
+                        />
                       ) : isVideoAttachment(file) ? (
-                        <video src={file.url} controls className="max-h-72 w-full object-cover" />
+                        <video
+                          src={file.url}
+                          controls
+                          className="max-h-72 w-full object-cover"
+                        />
                       ) : (
-                        <span className="flex items-center gap-2 p-3"><Paperclip size={16} /> {file.name}</span>
+                        <span className="flex items-center gap-2 p-3">
+                          <Paperclip size={16} /> {file.name}
+                        </span>
                       )}
                     </a>
                   ))}
@@ -582,25 +831,51 @@ export function ChatWindow({ onBack, className = "" }) {
                     <button onClick={() => setReplyTo(message)}>Reply</button>
                     <button
                       onClick={() => {
-                        setReactingTo((current) => (current === message._id ? null : message._id));
+                        setReactingTo((current) =>
+                          current === message._id ? null : message._id,
+                        );
                         setReactPickerOpen(false);
                       }}
                     >
                       React
                     </button>
-                    <button onClick={() => deleteMessageForMe(message._id)} title="Delete for me">Delete me</button>
-                    {mine && <button onClick={() => deleteMessageForEveryone(message._id)} className="inline-flex items-center gap-1" title="Delete for everyone"><Trash2 size={12} /> All</button>}
+                    <button
+                      onClick={() => deleteMessageForMe(message._id)}
+                      title="Delete for me"
+                    >
+                      Delete me
+                    </button>
+                    {mine && (
+                      <button
+                        onClick={() => deleteMessageForEveryone(message._id)}
+                        className="inline-flex items-center gap-1"
+                        title="Delete for everyone"
+                      >
+                        <Trash2 size={12} /> All
+                      </button>
+                    )}
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>
                     {mine && (
                       <CheckCheck
                         size={13}
-                        style={{ color: (message.seenBy && message.seenBy.length > 0) ? "#4da3ff" : "rgba(255,255,255,0.65)" }}
+                        style={{
+                          color:
+                            message.seenBy && message.seenBy.length > 0
+                              ? "#4da3ff"
+                              : "rgba(255,255,255,0.65)",
+                        }}
                       />
                     )}
                   </div>
                   {reactingTo === message._id && (
                     <div className="mt-2 flex items-center gap-1">
-                      {["\u2764\ufe0f", "\ud83d\ude02", "\ud83d\ude2e", "\ud83d\ude2d", "\ud83d\udd25"].map((emo) => (
+                      {[
+                        "\u2764\ufe0f",
+                        "\ud83d\ude02",
+                        "\ud83d\ude2e",
+                        "\ud83d\ude2d",
+                        "\ud83d\udd25",
+                      ].map((emo) => (
                         <button
                           key={emo}
                           onClick={() => {
@@ -623,8 +898,21 @@ export function ChatWindow({ onBack, className = "" }) {
                       {reactPickerOpen && (
                         <div className="relative">
                           <div className="absolute bottom-10 right-0 z-20 overflow-hidden rounded-xl">
-                            <button type="button" onClick={() => setReactPickerOpen(false)} className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"><X size={15} /></button>
-                            <EmojiPicker width={320} onEmojiClick={(e) => { reactToMessage(message._id, e.emoji); setReactPickerOpen(false); setReactingTo(null); }} />
+                            <button
+                              type="button"
+                              onClick={() => setReactPickerOpen(false)}
+                              className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"
+                            >
+                              <X size={15} />
+                            </button>
+                            <EmojiPicker
+                              width={320}
+                              onEmojiClick={(e) => {
+                                reactToMessage(message._id, e.emoji);
+                                setReactPickerOpen(false);
+                                setReactingTo(null);
+                              }}
+                            />
                           </div>
                         </div>
                       )}
@@ -633,7 +921,12 @@ export function ChatWindow({ onBack, className = "" }) {
                   {message.reactions?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {message.reactions.map((reaction, index) => (
-                        <span key={`${reaction.emoji}-${index}`} className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/10">{reaction.emoji}</span>
+                        <span
+                          key={`${reaction.emoji}-${index}`}
+                          className="rounded-full bg-black/10 px-2 py-0.5 text-xs dark:bg-white/10"
+                        >
+                          {reaction.emoji}
+                        </span>
                       ))}
                     </div>
                   )}
@@ -645,40 +938,108 @@ export function ChatWindow({ onBack, className = "" }) {
         <div ref={bottom} />
       </div>
 
-      {aiPanel && <div className="mx-4 mb-2 flex items-start gap-2 rounded-xl border border-teal-400/30 bg-teal-50 p-3 text-sm text-slate-700 dark:bg-teal-950/50 dark:text-teal-50"><span className="flex-1">{aiPanel}</span><button onClick={() => setAiPanel("")} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={15} /></button></div>}
-      {replyTo && <div className="mx-4 mb-2 rounded-xl bg-white/70 px-4 py-2 text-sm dark:bg-white/10">Replying to {replyTo.sender?.displayName}: {replyTo.text}<button className="ml-3 text-teal-500" onClick={() => setReplyTo(null)}>cancel</button></div>}
+      {aiPanel && (
+        <div className="mx-4 mb-2 flex items-start gap-2 rounded-xl border border-teal-400/30 bg-teal-50 p-3 text-sm text-slate-700 dark:bg-teal-950/50 dark:text-teal-50">
+          <span className="flex-1">{aiPanel}</span>
+          <button
+            onClick={() => setAiPanel("")}
+            className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+      {replyTo && (
+        <div className="mx-4 mb-2 rounded-xl bg-white/70 px-4 py-2 text-sm dark:bg-white/10">
+          Replying to {replyTo.sender?.displayName}: {replyTo.text}
+          <button
+            className="ml-3 text-teal-500"
+            onClick={() => setReplyTo(null)}
+          >
+            cancel
+          </button>
+        </div>
+      )}
       {attachments.length > 0 && (
         <div className="mx-4 mb-2 flex gap-2 overflow-x-auto">
           {attachments.map((file, index) =>
             isImageAttachment(file) ? (
               <div key={file.url} className="relative shrink-0">
-                <img src={file.url} alt={file.name} className="h-20 w-20 rounded-xl object-cover" />
-                <button onClick={() => setAttachments((items) => items.filter((_, itemIndex) => itemIndex !== index))} className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-white"><X size={12} /></button>
+                <img
+                  src={file.url}
+                  alt={file.name}
+                  className="h-20 w-20 rounded-xl object-cover"
+                />
+                <button
+                  onClick={() =>
+                    setAttachments((items) =>
+                      items.filter((_, itemIndex) => itemIndex !== index),
+                    )
+                  }
+                  className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/60 text-white"
+                >
+                  <X size={12} />
+                </button>
               </div>
             ) : (
-              <span key={file.url} className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-white/10"><Image size={15} />{file.name}<button onClick={() => setAttachments((items) => items.filter((_, itemIndex) => itemIndex !== index))}><X size={13} /></button></span>
-            )
+              <span
+                key={file.url}
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-white/10"
+              >
+                <Image size={15} />
+                {file.name}
+                <button
+                  onClick={() =>
+                    setAttachments((items) =>
+                      items.filter((_, itemIndex) => itemIndex !== index),
+                    )
+                  }
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            ),
           )}
         </div>
       )}
 
-      <form onSubmit={submit} className="glass m-2 shrink-0 flex flex-wrap items-center gap-2 rounded-2xl p-2 pb-[env(safe-area-inset-bottom,0px)] sm:m-3 sm:flex-nowrap sm:p-3">
+      <form
+        onSubmit={submit}
+        className="glass m-2 shrink-0 flex flex-wrap items-center gap-2 rounded-2xl p-2 pb-[env(safe-area-inset-bottom,0px)] sm:m-3 sm:flex-nowrap sm:p-3"
+      >
         {recording && (
           <div className="flex w-full items-center justify-between rounded-xl bg-black/10 px-3 py-2 text-xs dark:bg-white/10 sm:hidden">
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-red-500" />
               Recording {formatSecs(recordSeconds)}
             </span>
-            <button type="button" onClick={toggleVoiceRecording} className="rounded-lg bg-teal-500 px-2 py-1 text-white">
+            <button
+              type="button"
+              onClick={toggleVoiceRecording}
+              className="rounded-lg bg-teal-500 px-2 py-1 text-white"
+            >
               Stop
             </button>
           </div>
         )}
-        <label className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Attach">
+        <label
+          className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10"
+          title="Attach"
+        >
           <Paperclip size={20} />
-          <input type="file" multiple hidden onChange={(e) => onFiles([...e.target.files])} />
+          <input
+            type="file"
+            multiple
+            hidden
+            onChange={(e) => onFiles([...e.target.files])}
+          />
         </label>
-        <button type="button" onClick={toggleVoiceRecording} className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${recording ? "bg-teal-500 text-white" : ""}`} title={recording ? "Stop recording" : "Voice"}>
+        <button
+          type="button"
+          onClick={toggleVoiceRecording}
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${recording ? "bg-teal-500 text-white" : ""}`}
+          title={recording ? "Stop recording" : "Voice"}
+        >
           {recording ? <Square size={18} /> : <Mic size={20} />}
         </button>
         {recording && (
@@ -687,12 +1048,28 @@ export function ChatWindow({ onBack, className = "" }) {
             <span>Recording {formatSecs(recordSeconds)}</span>
           </div>
         )}
-        <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Emoji" onClick={() => setEmojiOpen(!emojiOpen)}><Smile size={20} /></button>
+        <button
+          type="button"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10"
+          title="Emoji"
+          onClick={() => setEmojiOpen(!emojiOpen)}
+        >
+          <Smile size={20} />
+        </button>
         <div className="relative order-first w-full sm:order-none sm:flex-1">
           {emojiOpen && (
             <div className="absolute bottom-12 left-0 z-10 max-w-[92vw] overflow-hidden rounded-xl">
-              <button type="button" onClick={() => setEmojiOpen(false)} className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"><X size={15} /></button>
-              <EmojiPicker width={320} onEmojiClick={(e) => setText((x) => x + e.emoji)} />
+              <button
+                type="button"
+                onClick={() => setEmojiOpen(false)}
+                className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"
+              >
+                <X size={15} />
+              </button>
+              <EmojiPicker
+                width={320}
+                onEmojiClick={(e) => setText((x) => x + e.emoji)}
+              />
             </div>
           )}
           <input
@@ -705,10 +1082,35 @@ export function ChatWindow({ onBack, className = "" }) {
             placeholder="Message, paste, or drop files"
           />
         </div>
-        <button type="button" onClick={() => aiAction("suggest")} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-pink-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI replies"><Sparkles size={20} /></button>
-        <button type="button" onClick={() => aiAction("summarize")} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-teal-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI summary"><Bot size={20} /></button>
-        <button type="button" onClick={() => aiAction("translate", { language: "English" })} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Translate"><Languages size={20} /></button>
-        <button disabled={sending} className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-500 text-white disabled:cursor-not-allowed disabled:opacity-60 sm:ml-0 sm:h-11 sm:w-11" title="Send">
+        <button
+          type="button"
+          onClick={() => aiAction("suggest")}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-pink-500 hover:bg-black/5 dark:hover:bg-white/10"
+          title="AI replies"
+        >
+          <Sparkles size={20} />
+        </button>
+        <button
+          type="button"
+          onClick={() => aiAction("summarize")}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-teal-500 hover:bg-black/5 dark:hover:bg-white/10"
+          title="AI summary"
+        >
+          <Bot size={20} />
+        </button>
+        <button
+          type="button"
+          onClick={() => aiAction("translate", { language: "English" })}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10"
+          title="Translate"
+        >
+          <Languages size={20} />
+        </button>
+        <button
+          disabled={sending}
+          className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-500 text-white disabled:cursor-not-allowed disabled:opacity-60 sm:ml-0 sm:h-11 sm:w-11"
+          title="Send"
+        >
           <Send size={20} />
         </button>
       </form>
