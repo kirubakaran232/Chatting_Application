@@ -44,8 +44,8 @@ export function ChatWindow({ onBack, className = "" }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
 
-  const other = activeChat?.members?.find((member) => member._id !== user._id) || activeChat?.members?.[0];
-  const title = activeChat?.type === "group" ? activeChat?.name : other?.displayName;
+  const other = activeChat?.members?.find((member) => String(member?._id || member) !== String(user?._id)) || activeChat?.members?.[0];
+  const title = activeChat?.type === "group" ? activeChat?.name || "Group" : (typeof other === "object" ? other?.displayName : activeChat?.name) || "Chat";
   const locked = activeChat?.lockedBy?.some((item) => item.user === user._id || item.user?._id === user._id);
   const archived = activeChat?.archivedBy?.some((id) => id === user._id || id?._id === user._id);
   const pinned = activeChat?.pinnedBy?.some((id) => id === user._id || id?._id === user._id);
@@ -415,7 +415,7 @@ export function ChatWindow({ onBack, className = "" }) {
 
   return (
     <main className={`${className} min-w-0 flex-1 flex-col`}>
-      <div className="glass flex min-h-16 w-full min-w-0 items-center gap-2 overflow-hidden border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
+      <div className="glass flex min-h-16 w-full min-w-0 items-center gap-2 border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
         <button onClick={onBack} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden" title="Back to chats">
           <ArrowLeft size={20} />
         </button>
