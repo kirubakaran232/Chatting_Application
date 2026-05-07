@@ -1,5 +1,5 @@
 import EmojiPicker from "emoji-picker-react";
-import { Bot, CheckCheck, Image, Languages, Lock, Mic, MoreVertical, Paperclip, Phone, ScreenShare, Send, Smile, Sparkles, Trash2, Video } from "lucide-react";
+import { Archive, ArrowLeft, Ban, Bot, CheckCheck, Flag, Languages, Lock, Mic, MoreVertical, Paperclip, Phone, Pin, ScreenShare, Send, Smile, Sparkles, Trash2, Video, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
@@ -9,14 +9,17 @@ import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { StoriesBar } from "./StoriesBar";
 
-export function ChatWindow() {
+export function ChatWindow({ onBack, className = "" }) {
   const { user } = useAuth();
-  const { activeChat, messages, sendMessage, uploadFile, socket, typingUsers, autoLocked } = useChat();
+  const { activeChat, messages, sendMessage, uploadFile, socket, typingUsers, autoLocked, chatAction, updateChat } = useChat();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pin, setPin] = useState("");
+  const [lockPin, setLockPin] = useState("");
+  const [lockModalOpen, setLockModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [aiPanel, setAiPanel] = useState("");
   const bottom = useRef(null);
@@ -28,38 +31,82 @@ export function ChatWindow() {
 
   useEffect(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
 
-  function submit(e) {
+  useEffect(() => {
+    setUnlocked(false);
+    setMenuOpen(false);
+    setLockModalOpen(false);
+    setPin("");
+    setLockPin("");
+  }, [activeChat?._id]);
+
+  async function submit(e) {
     e.preventDefault();
     if (!text.trim() && attachments.length === 0) return;
-    sendMessage({ text, attachments, replyTo: replyTo?._id });
-    setText("");
-    setAttachments([]);
-    setReplyTo(null);
-    socket?.emit("typing:stop", { chatId: activeChat._id });
+    try {
+      await sendMessage({ text, attachments, replyTo: replyTo?._id });
+      setText("");
+      setAttachments([]);
+      setReplyTo(null);
+      socket?.emit("typing:stop", { chatId: activeChat._id });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Message could not be sent");
+    }
   }
 
   async function onFiles(files) {
-    const uploaded = [];
-    for (const file of files) uploaded.push(await uploadFile(file));
-    setAttachments((items) => [...items, ...uploaded]);
+    try {
+      const uploaded = [];
+      for (const file of files) uploaded.push(await uploadFile(file));
+      setAttachments((items) => [...items, ...uploaded]);
+      toast.success("File ready to send");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Upload failed. Check Cloudinary settings.");
+    }
   }
 
   async function unlock() {
-    await api.post(`/chats/${activeChat._id}/unlock`, { pin });
-    setUnlocked(true);
-    setPin("");
+    try {
+      await api.post(`/chats/${activeChat._id}/unlock`, { pin });
+      setUnlocked(true);
+      setPin("");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid PIN");
+    }
   }
 
-  async function lockChat() {
-    const nextPin = prompt("Set a PIN for this chat");
-    if (!nextPin) return;
-    await api.post(`/chats/${activeChat._id}/lock`, { pin: nextPin });
-    toast.success("Chat locked");
+  async function lockChat(e) {
+    e.preventDefault();
+    if (lockPin.length < 4) return toast.error("PIN must be at least 4 digits");
+    try {
+      const { data } = await api.post(`/chats/${activeChat._id}/lock`, { pin: lockPin });
+      updateChat(activeChat._id, data.chat);
+      setUnlocked(false);
+      setLockPin("");
+      setLockModalOpen(false);
+      toast.success("Chat locked");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not lock chat");
+    }
   }
 
   async function aiAction(action, payload = {}) {
     const { data } = await api.post("/messages/ai", { action, chatId: activeChat?._id, text, ...payload });
     setAiPanel(data.result);
+  }
+
+  async function runMenuAction(action) {
+    try {
+      if (action === "block") {
+        await api.patch(`/users/${other.username}/block`);
+        toast.success("User block setting updated");
+      } else {
+        await chatAction(action);
+        toast.success(`${action[0].toUpperCase()}${action.slice(1)} updated`);
+      }
+      setMenuOpen(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Action failed");
+    }
   }
 
   if (!activeChat) {
@@ -76,7 +123,7 @@ export function ChatWindow() {
 
   if (needsPin) {
     return (
-      <main className="grid flex-1 place-items-center p-6">
+      <main className={`${className} grid flex-1 place-items-center p-4 sm:p-6`}>
         <div className="glass w-full max-w-sm rounded-2xl p-6 text-center shadow-glow">
           <Lock className="mx-auto text-teal-500" size={42} />
           <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">Hidden chat locked</h2>
@@ -89,24 +136,56 @@ export function ChatWindow() {
   }
 
   return (
-    <main className="flex min-w-0 flex-1 flex-col">
-      <div className="glass flex items-center gap-3 border-b border-black/5 px-4 py-3 dark:border-white/10">
-        <img className="h-11 w-11 rounded-full object-cover" src={activeChat.avatar || other?.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${title}`} alt="" />
-        <div className="min-w-0 flex-1">
+    <main className={`${className} min-w-0 flex-1 flex-col`}>
+      <div className="glass flex min-h-16 items-center gap-2 border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3">
+        <button onClick={onBack} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden" title="Back to chats">
+          <ArrowLeft size={20} />
+        </button>
+        <img className="h-10 w-10 shrink-0 rounded-full object-cover sm:h-11 sm:w-11" src={activeChat.avatar || other?.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${title}`} alt="" />
+        <div className="min-w-0 flex-1 overflow-hidden">
           <p className="truncate font-semibold text-slate-900 dark:text-white">{title}</p>
           <p className="truncate text-sm text-slate-500">{typingUsers[activeChat._id] ? `${typingUsers[activeChat._id].displayName} is typing...` : activeChat.type}</p>
         </div>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Video call"><Video size={19} /></button>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Screen share"><ScreenShare size={19} /></button>
-        <button onClick={lockChat} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Lock chat"><Lock size={19} /></button>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="More"><MoreVertical size={19} /></button>
+        <div className="flex max-w-[44vw] shrink-0 items-center gap-1 overflow-x-auto sm:max-w-none">
+          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
+          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Video call"><Video size={19} /></button>
+          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Screen share"><ScreenShare size={19} /></button>
+          <button onClick={() => setLockModalOpen(true)} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Lock chat"><Lock size={19} /></button>
+        </div>
+        <div className="relative shrink-0">
+          <button onClick={() => setMenuOpen((open) => !open)} className="grid h-10 w-10 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="More"><MoreVertical size={19} /></button>
+          {menuOpen && (
+            <div className="glass absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
+              <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> Pin chat</button>
+              <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> Archive chat</button>
+              <button onClick={() => aiAction("summarize")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Bot size={16} /> AI summary</button>
+              <button onClick={() => runMenuAction("report")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Flag size={16} /> Report chat</button>
+              {activeChat.type === "direct" && <button onClick={() => runMenuAction("block")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Ban size={16} /> Block user</button>}
+            </div>
+          )}
+        </div>
       </div>
+
+      {lockModalOpen && (
+        <div className="fixed inset-0 z-30 grid place-items-center bg-black/55 p-4">
+          <form onSubmit={lockChat} className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Lock this chat</h2>
+                <p className="mt-1 text-sm text-slate-500">Create a PIN to hide this chat preview and messages.</p>
+              </div>
+              <button type="button" onClick={() => setLockModalOpen(false)} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"><X size={18} /></button>
+            </div>
+            <input value={lockPin} onChange={(e) => setLockPin(e.target.value)} type="password" inputMode="numeric" className="mt-5 w-full rounded-xl border border-black/10 bg-white/70 px-4 py-3 text-center outline-none dark:border-white/10 dark:bg-white/10" placeholder="Enter at least 4 digits" />
+            <button className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">Save PIN</button>
+          </form>
+        </div>
+      )}
 
       <StoriesBar />
 
       <div
-        className="flex-1 overflow-y-auto p-4"
+        className="flex-1 overflow-y-auto p-3 sm:p-4"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -118,7 +197,7 @@ export function ChatWindow() {
             const mine = message.sender?._id === user._id;
             return (
               <motion.div key={message._id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`mb-3 flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[78%] rounded-2xl px-4 py-2 shadow-sm ${mine ? "rounded-br-sm bg-teal-500 text-white" : "rounded-bl-sm bg-white/80 text-slate-900 dark:bg-white/10 dark:text-white"}`}>
+                <div className={`max-w-[86%] rounded-2xl px-3 py-2 shadow-sm sm:max-w-[78%] sm:px-4 ${mine ? "rounded-br-sm bg-teal-500 text-white" : "rounded-bl-sm bg-white/80 text-slate-900 dark:bg-white/10 dark:text-white"}`}>
                   {message.replyTo && <div className="mb-2 rounded-lg bg-black/10 px-3 py-2 text-xs opacity-80">Replying to: {message.replyTo.text}</div>}
                   {message.deletedForEveryone ? <em>This message was deleted</em> : <p className="whitespace-pre-wrap break-words">{message.text}</p>}
                   {message.attachments?.map((file) => (
@@ -128,7 +207,7 @@ export function ChatWindow() {
                   ))}
                   <div className="mt-1 flex items-center justify-end gap-2 text-[11px] opacity-70">
                     <button onClick={() => setReplyTo(message)}>Reply</button>
-                    <button onClick={() => api.patch(`/messages/${message._id}/reaction`, { emoji: "❤️" })}>React</button>
+                    <button onClick={() => api.patch(`/messages/${message._id}/reaction`, { emoji: "\u2764\ufe0f" })}>React</button>
                     {mine && <button onClick={() => api.delete(`/messages/${message._id}/everyone`)}><Trash2 size={12} /></button>}
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>
                     {mine && <CheckCheck size={13} />}
@@ -145,15 +224,15 @@ export function ChatWindow() {
       {replyTo && <div className="mx-4 mb-2 rounded-xl bg-white/70 px-4 py-2 text-sm dark:bg-white/10">Replying to {replyTo.sender?.displayName}: {replyTo.text}<button className="ml-3 text-teal-500" onClick={() => setReplyTo(null)}>cancel</button></div>}
       {attachments.length > 0 && <div className="mx-4 mb-2 flex gap-2 overflow-x-auto">{attachments.map((file) => <span key={file.url} className="rounded-lg bg-white/70 px-3 py-2 text-sm dark:bg-white/10">{file.name}</span>)}</div>}
 
-      <form onSubmit={submit} className="glass m-3 flex items-center gap-2 rounded-2xl p-3">
-        <label className="cursor-pointer rounded-xl p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Attach">
+      <form onSubmit={submit} className="glass m-2 flex flex-wrap items-center gap-2 rounded-2xl p-2 sm:m-3 sm:flex-nowrap sm:p-3">
+        <label className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Attach">
           <Paperclip size={20} />
           <input type="file" multiple hidden onChange={(e) => onFiles([...e.target.files])} />
         </label>
-        <button type="button" className="rounded-xl p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Voice"><Mic size={20} /></button>
-        <button type="button" className="rounded-xl p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Emoji" onClick={() => setEmojiOpen(!emojiOpen)}><Smile size={20} /></button>
-        <div className="relative flex-1">
-          {emojiOpen && <div className="absolute bottom-12 left-0 z-10"><EmojiPicker onEmojiClick={(e) => setText((x) => x + e.emoji)} /></div>}
+        <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Voice"><Mic size={20} /></button>
+        <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Emoji" onClick={() => setEmojiOpen(!emojiOpen)}><Smile size={20} /></button>
+        <div className="relative order-first w-full sm:order-none sm:flex-1">
+          {emojiOpen && <div className="absolute bottom-12 left-0 z-10 max-w-[92vw] overflow-hidden rounded-xl"><EmojiPicker width={320} onEmojiClick={(e) => setText((x) => x + e.emoji)} /></div>}
           <input
             value={text}
             onChange={(e) => {
@@ -164,10 +243,10 @@ export function ChatWindow() {
             placeholder="Message, paste, or drop files"
           />
         </div>
-        <button type="button" onClick={() => aiAction("suggest")} className="rounded-xl p-2 text-pink-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI replies"><Sparkles size={20} /></button>
-        <button type="button" onClick={() => aiAction("summarize")} className="rounded-xl p-2 text-teal-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI summary"><Bot size={20} /></button>
-        <button type="button" onClick={() => aiAction("translate", { language: "English" })} className="rounded-xl p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Translate"><Languages size={20} /></button>
-        <button className="rounded-xl bg-teal-500 p-3 text-white" title="Send"><Send size={20} /></button>
+        <button type="button" onClick={() => aiAction("suggest")} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-pink-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI replies"><Sparkles size={20} /></button>
+        <button type="button" onClick={() => aiAction("summarize")} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-teal-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI summary"><Bot size={20} /></button>
+        <button type="button" onClick={() => aiAction("translate", { language: "English" })} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Translate"><Languages size={20} /></button>
+        <button className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-500 text-white sm:ml-0 sm:h-11 sm:w-11" title="Send"><Send size={20} /></button>
       </form>
     </main>
   );

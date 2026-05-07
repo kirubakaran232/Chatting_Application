@@ -11,6 +11,13 @@ function resourceType(mime) {
   return "raw";
 }
 
+function attachmentType(mime) {
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  if (mime.startsWith("audio/")) return "audio";
+  return "file";
+}
+
 export const uploadMedia = asyncHandler(async (req, res) => {
   if (!req.file) return res.status(422).json({ message: "File is required" });
   const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
@@ -23,7 +30,7 @@ export const uploadMedia = asyncHandler(async (req, res) => {
     attachment: {
       url: uploaded.secure_url,
       publicId: uploaded.public_id,
-      type: req.file.mimetype.split("/")[0] === "audio" ? "audio" : req.file.mimetype.split("/")[0],
+      type: attachmentType(req.file.mimetype),
       name: req.file.originalname,
       size: req.file.size,
       format: uploaded.format,
@@ -50,7 +57,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
   chat.lastMessage = message._id;
   await chat.save();
   await message.populate("sender", "username displayName avatar");
-  req.app.get("io").to(String(chat._id)).emit("message:new", message);
+  const io = req.app.get("io");
+  io.to(String(chat._id)).emit("message:new", message);
+  chat.members.forEach((memberId) => io.to(String(memberId)).emit("chat:updated", { chatId: chat._id, lastMessage: message }));
   res.status(201).json({ message });
 });
 

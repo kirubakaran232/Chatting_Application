@@ -22,6 +22,7 @@ export function registerSockets(io) {
   io.on("connection", async (socket) => {
     const userId = String(socket.user._id);
     onlineUsers.set(userId, socket.id);
+    socket.join(userId);
     await User.findByIdAndUpdate(userId, { status: "online" });
     io.emit("presence:update", { userId, status: "online" });
 

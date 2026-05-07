@@ -15,27 +15,54 @@ export function ChatProvider({ children }) {
   const [typingUsers, setTypingUsers] = useState({});
   const [presence, setPresence] = useState({});
   const inactivityTimer = useRef(null);
+  const activeChatRef = useRef(null);
   const [autoLocked, setAutoLocked] = useState(false);
+
+  useEffect(() => {
+    activeChatRef.current = activeChat;
+  }, [activeChat]);
 
   useEffect(() => {
     if (!user) return undefined;
     const token = localStorage.getItem("chat_token");
     const nextSocket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:5000", { auth: { token } });
     setSocket(nextSocket);
+    nextSocket.on("chat:new", (chat) => {
+      nextSocket.emit("chat:join", { chatId: chat._id });
+      setChats((items) => (items.some((item) => item._id === chat._id) ? items : [chat, ...items]));
+      toast.success(`New ${chat.type === "group" ? "group" : "chat"} available`);
+    });
+    nextSocket.on("chat:updated", ({ chatId, lastMessage }) => {
+      setChats((items) =>
+        items
+          .map((chat) => (chat._id === chatId ? { ...chat, lastMessage } : chat))
+          .sort((a, b) => new Date(b.updatedAt || b.lastMessage?.createdAt || 0) - new Date(a.updatedAt || a.lastMessage?.createdAt || 0))
+      );
+    });
     nextSocket.on("message:new", (message) => {
       setMessages((items) => {
-        if (message.chat !== activeChat?._id || items.some((item) => item._id === message._id)) return items;
+        if (message.chat !== activeChatRef.current?._id || items.some((item) => item._id === message._id)) return items;
         return [...items, message];
       });
       setChats((items) => items.map((chat) => (chat._id === message.chat ? { ...chat, lastMessage: message } : chat)));
       if (message.sender?._id !== user._id) new Audio("/notify.mp3").play().catch(() => {});
+    });
+    nextSocket.on("message:reaction", ({ messageId, reactions }) => {
+      setMessages((items) => items.map((message) => (message._id === messageId ? { ...message, reactions } : message)));
+    });
+    nextSocket.on("message:deleted", ({ messageId }) => {
+      setMessages((items) =>
+        items.map((message) =>
+          message._id === messageId ? { ...message, text: "", attachments: [], deletedForEveryone: true } : message
+        )
+      );
     });
     nextSocket.on("typing:start", ({ chatId, user: typer }) => setTypingUsers((x) => ({ ...x, [chatId]: typer })));
     nextSocket.on("typing:stop", ({ chatId }) => setTypingUsers((x) => ({ ...x, [chatId]: null })));
     nextSocket.on("presence:update", ({ userId, status, lastSeen }) => setPresence((x) => ({ ...x, [userId]: { status, lastSeen } })));
     nextSocket.on("call:offer", () => toast("Incoming call"));
     return () => nextSocket.disconnect();
-  }, [user, activeChat?._id]);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -72,6 +99,19 @@ export function ChatProvider({ children }) {
     setMessages((items) => (items.some((item) => item._id === data.message._id) ? items : [...items, data.message]));
   }
 
+  async function updateChat(chatId, updater) {
+    const nextChat = typeof updater === "function" ? updater(chats.find((chat) => chat._id === chatId)) : updater;
+    setChats((items) => items.map((chat) => (chat._id === chatId ? { ...chat, ...nextChat } : chat)));
+    setActiveChat((chat) => (chat?._id === chatId ? { ...chat, ...nextChat } : chat));
+  }
+
+  async function chatAction(action) {
+    if (!activeChat) return;
+    const { data } = await api.patch(`/chats/${activeChat._id}/action`, { action });
+    updateChat(activeChat._id, data.chat);
+    return data.chat;
+  }
+
   async function uploadFile(file) {
     const form = new FormData();
     form.append("file", file);
@@ -80,7 +120,7 @@ export function ChatProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ socket, chats, setChats, activeChat, messages, typingUsers, presence, autoLocked, openChat, sendMessage, uploadFile }),
+    () => ({ socket, chats, setChats, activeChat, messages, typingUsers, presence, autoLocked, openChat, sendMessage, uploadFile, chatAction, updateChat }),
     [socket, chats, activeChat, messages, typingUsers, presence, autoLocked]
   );
 

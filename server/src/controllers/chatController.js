@@ -16,8 +16,13 @@ export const startDirectChat = asyncHandler(async (req, res) => {
   const other = await User.findOne({ username: req.body.username?.toLowerCase() });
   if (!other) return res.status(404).json({ message: "User not found" });
   let chat = await Chat.findOne({ type: "direct", members: { $all: [req.user._id, other._id] } });
+  const created = !chat;
   if (!chat) chat = await Chat.create({ type: "direct", members: [req.user._id, other._id] });
   await chat.populate("members", "username displayName avatar status lastSeen");
+  if (created) {
+    const io = req.app.get("io");
+    chat.members.forEach((member) => io.to(String(member._id)).emit("chat:new", chat));
+  }
   res.status(201).json({ chat });
 });
 
@@ -26,6 +31,8 @@ export const createGroup = asyncHandler(async (req, res) => {
   const memberIds = [...new Set([req.user._id.toString(), ...users.map((u) => u._id.toString())])];
   const chat = await Chat.create({ type: "group", name: req.body.name, members: memberIds, admins: [req.user._id] });
   await chat.populate("members", "username displayName avatar status lastSeen");
+  const io = req.app.get("io");
+  chat.members.forEach((member) => io.to(String(member._id)).emit("chat:new", chat));
   res.status(201).json({ chat });
 });
 
@@ -48,7 +55,8 @@ export const lockChat = asyncHandler(async (req, res) => {
   chat.lockedBy = chat.lockedBy.filter((item) => item.user.toString() !== req.user._id.toString());
   chat.lockedBy.push({ user: req.user._id, pinHash: await bcrypt.hash(String(pin), 12) });
   await chat.save();
-  res.json({ message: "Chat locked" });
+  await chat.populate("members", "username displayName avatar status lastSeen");
+  res.json({ message: "Chat locked", chat });
 });
 
 export const unlockChat = asyncHandler(async (req, res) => {
@@ -68,5 +76,6 @@ export const chatAction = asyncHandler(async (req, res) => {
   const exists = chat[field].some((id) => id.toString() === req.user._id.toString());
   chat[field] = exists ? chat[field].filter((id) => id.toString() !== req.user._id.toString()) : [...chat[field], req.user._id];
   await chat.save();
+  await chat.populate("members", "username displayName avatar status lastSeen");
   res.json({ chat });
 });

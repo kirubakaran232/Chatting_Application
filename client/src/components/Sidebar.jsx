@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 
-export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly }) {
+export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, className = "" }) {
   const { user, logout } = useAuth();
   const { chats, openChat, activeChat, presence, autoLocked } = useChat();
   const [q, setQ] = useState("");
@@ -20,7 +20,8 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly }) {
 
   async function start(username) {
     const { data } = await api.post("/chats/direct", { username });
-    openChat(data.chat);
+    await openChat(data.chat);
+    onOpenChat?.();
     setResults([]);
     setQ("");
   }
@@ -28,7 +29,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly }) {
   const visibleChats = chats.filter((chat) => (lockedOnly ? chat.lockedBy?.some((x) => x.user === user._id || x.user?._id === user._id) : true));
 
   return (
-    <aside className="glass flex h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl">
+    <aside className={`glass h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl ${className}`}>
       <div className="flex items-center gap-3 border-b border-black/5 p-4 dark:border-white/10">
         <img className="h-11 w-11 rounded-full object-cover" src={user.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`} alt="" />
         <div className="min-w-0 flex-1">
@@ -79,7 +80,10 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly }) {
             <motion.button
               layout
               key={chat._id}
-              onClick={() => openChat(chat)}
+              onClick={async () => {
+                await openChat(chat);
+                onOpenChat?.();
+              }}
               className={`mb-2 flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${activeChat?._id === chat._id ? "bg-teal-500 text-white shadow-glow" : "hover:bg-white/70 dark:hover:bg-white/10"}`}
             >
               <div className="relative">
