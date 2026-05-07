@@ -415,7 +415,7 @@ export function ChatWindow({ onBack, className = "" }) {
 
   return (
     <main className={`${className} min-w-0 flex-1 flex-col`}>
-      <div className="glass sticky top-0 z-20 flex min-h-16 w-full min-w-0 items-center gap-2 overflow-hidden border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
+      <div className="glass flex min-h-16 w-full min-w-0 items-center gap-2 overflow-hidden border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
         <button onClick={onBack} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden" title="Back to chats">
           <ArrowLeft size={20} />
         </button>
