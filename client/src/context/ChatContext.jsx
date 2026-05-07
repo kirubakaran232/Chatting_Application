@@ -112,6 +112,20 @@ export function ChatProvider({ children }) {
     return data.chat;
   }
 
+  async function deleteMessageForMe(messageId) {
+    await api.delete(`/messages/${messageId}/me`);
+    setMessages((items) => items.filter((message) => message._id !== messageId));
+  }
+
+  async function deleteMessageForEveryone(messageId) {
+    await api.delete(`/messages/${messageId}/everyone`);
+    setMessages((items) =>
+      items.map((message) =>
+        message._id === messageId ? { ...message, text: "", attachments: [], deletedForEveryone: true } : message
+      )
+    );
+  }
+
   async function uploadFile(file) {
     const form = new FormData();
     form.append("file", file);
@@ -120,7 +134,7 @@ export function ChatProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ socket, chats, setChats, activeChat, messages, typingUsers, presence, autoLocked, openChat, sendMessage, uploadFile, chatAction, updateChat }),
+    () => ({ socket, chats, setChats, activeChat, messages, typingUsers, presence, autoLocked, openChat, sendMessage, uploadFile, chatAction, updateChat, deleteMessageForMe, deleteMessageForEveryone }),
     [socket, chats, activeChat, messages, typingUsers, presence, autoLocked]
   );
 

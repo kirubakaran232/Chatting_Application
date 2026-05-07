@@ -10,6 +10,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
   const { chats, openChat, activeChat, presence, autoLocked } = useChat();
   const [q, setQ] = useState("");
   const [results, setResults] = useState([]);
+  const [archivedOnly, setArchivedOnly] = useState(false);
 
   async function search(value) {
     setQ(value);
@@ -26,7 +27,13 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
     setQ("");
   }
 
-  const visibleChats = chats.filter((chat) => (lockedOnly ? chat.lockedBy?.some((x) => x.user === user._id || x.user?._id === user._id) : true));
+  const isLockedByMe = (chat) => chat.lockedBy?.some((x) => x.user === user._id || x.user?._id === user._id);
+  const isArchivedByMe = (chat) => chat.archivedBy?.some((id) => id === user._id || id?._id === user._id);
+  const visibleChats = chats.filter((chat) => {
+    if (lockedOnly && !isLockedByMe(chat)) return false;
+    if (archivedOnly) return isArchivedByMe(chat);
+    return !isArchivedByMe(chat);
+  });
 
   return (
     <aside className={`glass h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl ${className}`}>
@@ -66,7 +73,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
 
       <div className="flex gap-2 px-4 pb-3 text-xs text-slate-500">
         <span className="inline-flex items-center gap-1"><Pin size={13} /> pinned</span>
-        <span className="inline-flex items-center gap-1"><Archive size={13} /> archived</span>
+        <button onClick={() => setArchivedOnly((value) => !value)} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${archivedOnly ? "bg-teal-500 text-white" : ""}`}><Archive size={13} /> archived</button>
         <span className="inline-flex items-center gap-1"><Users size={13} /> groups</span>
       </div>
 

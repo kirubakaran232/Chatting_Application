@@ -83,6 +83,18 @@ export const deleteForEveryone = asyncHandler(async (req, res) => {
   res.json({ message: "Deleted" });
 });
 
+export const deleteForMe = asyncHandler(async (req, res) => {
+  const message = await Message.findById(req.params.messageId);
+  if (!message) return res.status(404).json({ message: "Message not found" });
+  const chat = await Chat.findOne({ _id: message.chat, members: req.user._id });
+  if (!chat) return res.status(404).json({ message: "Message not found" });
+  if (!message.deletedFor.some((id) => id.toString() === req.user._id.toString())) {
+    message.deletedFor.push(req.user._id);
+    await message.save();
+  }
+  res.json({ message: "Deleted for you" });
+});
+
 export const aiTools = asyncHandler(async (req, res) => {
   try {
     const { action, text, language, chatId } = req.body;

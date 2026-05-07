@@ -11,7 +11,7 @@ import { StoriesBar } from "./StoriesBar";
 
 export function ChatWindow({ onBack, className = "" }) {
   const { user } = useAuth();
-  const { activeChat, messages, sendMessage, uploadFile, socket, typingUsers, autoLocked, chatAction, updateChat } = useChat();
+  const { activeChat, messages, sendMessage, uploadFile, socket, typingUsers, autoLocked, chatAction, updateChat, deleteMessageForMe, deleteMessageForEveryone } = useChat();
   const [text, setText] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
@@ -175,11 +175,11 @@ export function ChatWindow({ onBack, className = "" }) {
           <p className="truncate font-semibold text-slate-900 dark:text-white">{title}</p>
           <p className="truncate text-sm text-slate-500">{typingUsers[activeChat._id] ? `${typingUsers[activeChat._id].displayName} is typing...` : activeChat.type}</p>
         </div>
-        <div className="flex max-w-[44vw] shrink-0 items-center gap-1 overflow-x-auto sm:max-w-none">
+        <div className="flex shrink-0 items-center gap-1">
           <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
-          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Video call"><Video size={19} /></button>
-          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Screen share"><ScreenShare size={19} /></button>
-          <button onClick={() => setLockModalOpen(true)} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Lock chat"><Lock size={19} /></button>
+          <button className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Video call"><Video size={19} /></button>
+          <button className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Screen share"><ScreenShare size={19} /></button>
+          <button onClick={() => setLockModalOpen(true)} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Lock chat"><Lock size={19} /></button>
         </div>
         <div className="relative shrink-0">
           <button onClick={() => setMenuOpen((open) => !open)} className="grid h-10 w-10 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="More"><MoreVertical size={19} /></button>
@@ -187,6 +187,8 @@ export function ChatWindow({ onBack, className = "" }) {
             <div className="glass absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
               <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> Pin chat</button>
               <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> Archive chat</button>
+              <button onClick={() => { setLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Lock size={16} /> Lock chat</button>
+              <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
               {locked && <button onClick={() => { setRemoveLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Unlock size={16} /> Remove lock</button>}
               <button onClick={() => aiAction("summarize")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Bot size={16} /> AI summary</button>
               <button onClick={() => runMenuAction("report")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Flag size={16} /> Report chat</button>
@@ -254,7 +256,8 @@ export function ChatWindow({ onBack, className = "" }) {
                   <div className="mt-1 flex items-center justify-end gap-2 text-[11px] opacity-70">
                     <button onClick={() => setReplyTo(message)}>Reply</button>
                     <button onClick={() => api.patch(`/messages/${message._id}/reaction`, { emoji: "\u2764\ufe0f" })}>React</button>
-                    {mine && <button onClick={() => api.delete(`/messages/${message._id}/everyone`)}><Trash2 size={12} /></button>}
+                    <button onClick={() => deleteMessageForMe(message._id)} title="Delete for me">Delete me</button>
+                    {mine && <button onClick={() => deleteMessageForEveryone(message._id)} className="inline-flex items-center gap-1" title="Delete for everyone"><Trash2 size={12} /> All</button>}
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>
                     {mine && <CheckCheck size={13} />}
                   </div>
