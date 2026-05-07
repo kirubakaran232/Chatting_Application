@@ -16,6 +16,8 @@ export function ChatWindow({ onBack, className = "" }) {
   const [attachments, setAttachments] = useState([]);
   const [replyTo, setReplyTo] = useState(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [reactingTo, setReactingTo] = useState(null);
+  const [reactPickerOpen, setReactPickerOpen] = useState(false);
   const [pin, setPin] = useState("");
   const [lockPin, setLockPin] = useState("");
   const [lockModalOpen, setLockModalOpen] = useState(false);
@@ -26,14 +28,24 @@ export function ChatWindow({ onBack, className = "" }) {
   const [aiPanel, setAiPanel] = useState("");
   const [sending, setSending] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const [callOpen, setCallOpen] = useState(false);
+  const [callStatus, setCallStatus] = useState("idle"); // idle | calling | incoming | in-call
+  const [incomingOffer, setIncomingOffer] = useState(null);
+  const [muted, setMuted] = useState(false);
   const bottom = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const pcRef = useRef(null);
+  const localStreamRef = useRef(null);
+  const remoteStreamRef = useRef(null);
+  const remoteAudioRef = useRef(null);
 
   const other = activeChat?.members?.find((member) => member._id !== user._id) || activeChat?.members?.[0];
   const title = activeChat?.type === "group" ? activeChat?.name : other?.displayName;
   const locked = activeChat?.lockedBy?.some((item) => item.user === user._id || item.user?._id === user._id);
   const archived = activeChat?.archivedBy?.some((id) => id === user._id || id?._id === user._id);
+  const pinned = activeChat?.pinnedBy?.some((id) => id === user._id || id?._id === user._id);
   const needsPin = activeChat && (locked || autoLocked) && !unlocked;
 
   useEffect(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
@@ -46,7 +58,150 @@ export function ChatWindow({ onBack, className = "" }) {
     setPin("");
     setLockPin("");
     setRemoveLockPin("");
+    setReactingTo(null);
+    setReactPickerOpen(false);
+    setEmojiOpen(false);
   }, [activeChat?._id]);
+
+  useEffect(() => {
+    if (!recording) return undefined;
+    setRecordSeconds(0);
+    const id = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [recording]);
+
+  function formatSecs(total) {
+    const mm = String(Math.floor(total / 60)).padStart(2, "0");
+    const ss = String(total % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+
+  function cleanupCall() {
+    try {
+      pcRef.current?.close?.();
+    } catch {}
+    pcRef.current = null;
+    localStreamRef.current?.getTracks?.().forEach((t) => t.stop());
+    localStreamRef.current = null;
+    remoteStreamRef.current = null;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+    setCallStatus("idle");
+    setIncomingOffer(null);
+    setMuted(false);
+    setCallOpen(false);
+  }
+
+  function ensurePeerConnection() {
+    if (pcRef.current) return pcRef.current;
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+    pc.onicecandidate = (event) => {
+      if (event.candidate) socket?.emit("call:ice", { chatId: activeChat._id, candidate: event.candidate });
+    };
+    pc.ontrack = (event) => {
+      const [stream] = event.streams;
+      remoteStreamRef.current = stream;
+      if (remoteAudioRef.current) remoteAudioRef.current.srcObject = stream;
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
+        cleanupCall();
+      }
+    };
+    pcRef.current = pc;
+    return pc;
+  }
+
+  async function startOutgoingCall() {
+    if (!socket || !activeChat) return;
+    try {
+      setCallOpen(true);
+      setCallStatus("calling");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      localStreamRef.current = stream;
+      const pc = ensurePeerConnection();
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      socket.emit("call:offer", { chatId: activeChat._id, sdp: offer });
+    } catch {
+      toast.error("Microphone permission was blocked");
+      cleanupCall();
+    }
+  }
+
+  async function acceptIncomingCall() {
+    if (!socket || !incomingOffer || !activeChat) return;
+    try {
+      setCallOpen(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      localStreamRef.current = stream;
+      const pc = ensurePeerConnection();
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      await pc.setRemoteDescription(incomingOffer.sdp);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("call:answer", { chatId: activeChat._id, sdp: answer });
+      setCallStatus("in-call");
+      setIncomingOffer(null);
+    } catch {
+      toast.error("Could not answer call");
+      cleanupCall();
+    }
+  }
+
+  function endCall() {
+    socket?.emit("call:end", { chatId: activeChat?._id });
+    cleanupCall();
+  }
+
+  function toggleMute() {
+    setMuted((v) => {
+      const next = !v;
+      localStreamRef.current?.getAudioTracks?.().forEach((t) => {
+        t.enabled = !next;
+      });
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    if (!socket || !activeChat) return undefined;
+    const onOffer = (payload) => {
+      if (payload.chatId !== activeChat._id) return;
+      setIncomingOffer(payload);
+      setCallStatus("incoming");
+      setCallOpen(true);
+    };
+    const onAnswer = async (payload) => {
+      if (payload.chatId !== activeChat._id) return;
+      try {
+        await pcRef.current?.setRemoteDescription?.(payload.sdp);
+        setCallStatus("in-call");
+      } catch {}
+    };
+    const onIce = async (payload) => {
+      if (payload.chatId !== activeChat._id) return;
+      try {
+        await pcRef.current?.addIceCandidate?.(payload.candidate);
+      } catch {}
+    };
+    const onEnd = (payload) => {
+      if (payload.chatId !== activeChat._id) return;
+      cleanupCall();
+    };
+    socket.on("call:offer", onOffer);
+    socket.on("call:answer", onAnswer);
+    socket.on("call:ice", onIce);
+    socket.on("call:end", onEnd);
+    return () => {
+      socket.off("call:offer", onOffer);
+      socket.off("call:answer", onAnswer);
+      socket.off("call:ice", onIce);
+      socket.off("call:end", onEnd);
+    };
+  }, [socket, activeChat?._id]);
 
   function isImageAttachment(file) {
     const value = `${file.type || ""} ${file.format || ""} ${file.name || ""} ${file.url || ""}`.toLowerCase();
@@ -227,7 +382,7 @@ export function ChatWindow({ onBack, className = "" }) {
           <p className="truncate text-sm text-slate-500">{typingUsers[activeChat._id] ? `${typingUsers[activeChat._id].displayName} is typing...` : activeChat.type}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
+          <button onClick={startOutgoingCall} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
           <button className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Video call"><Video size={19} /></button>
           <button className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Screen share"><ScreenShare size={19} /></button>
           <button onClick={() => setLockModalOpen(true)} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Lock chat"><Lock size={19} /></button>
@@ -240,7 +395,7 @@ export function ChatWindow({ onBack, className = "" }) {
                 <span>Options</span>
                 <button onClick={() => setMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
               </div>
-              <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> Pin chat</button>
+              <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> {pinned ? "Unpin chat" : "Pin chat"}</button>
               <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> {archived ? "Unarchive chat" : "Archive chat"}</button>
               <button onClick={() => { setLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Lock size={16} /> Lock chat</button>
               <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
@@ -285,6 +440,43 @@ export function ChatWindow({ onBack, className = "" }) {
         </div>
       )}
 
+      {callOpen && (
+        <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-4">
+          <div className="glass w-full max-w-sm rounded-2xl p-5 shadow-glow">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Voice call</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {callStatus === "calling" && "Calling..."}
+                  {callStatus === "incoming" && "Incoming call"}
+                  {callStatus === "in-call" && "In call"}
+                  {callStatus === "idle" && "Ready"}
+                </p>
+              </div>
+              <button onClick={endCall} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Close"><X size={18} /></button>
+            </div>
+            <audio ref={remoteAudioRef} autoPlay />
+            <div className="mt-4 flex gap-2">
+              {callStatus === "incoming" && (
+                <>
+                  <button onClick={acceptIncomingCall} className="flex-1 rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white">Accept</button>
+                  <button onClick={endCall} className="flex-1 rounded-xl bg-white/20 px-4 py-3 font-semibold">Decline</button>
+                </>
+              )}
+              {callStatus === "calling" && <button onClick={endCall} className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold">Cancel</button>}
+              {callStatus === "in-call" && (
+                <>
+                  <button onClick={toggleMute} className={`flex-1 rounded-xl px-4 py-3 font-semibold ${muted ? "bg-teal-500 text-white" : "bg-white/20"}`}>{muted ? "Unmute" : "Mute"}</button>
+                  <button onClick={endCall} className="flex-1 rounded-xl bg-white/20 px-4 py-3 font-semibold">Hang up</button>
+                </>
+              )}
+              {callStatus === "idle" && <button onClick={() => setCallOpen(false)} className="w-full rounded-xl bg-white/20 px-4 py-3 font-semibold">Close</button>}
+            </div>
+            <p className="mt-3 text-xs text-slate-500">Note: works best on Wi‑Fi; some networks need TURN for reliability.</p>
+          </div>
+        </div>
+      )}
+
       <StoriesBar />
 
       <div
@@ -316,14 +508,53 @@ export function ChatWindow({ onBack, className = "" }) {
                       )}
                     </a>
                   ))}
-                  <div className="mt-1 flex items-center justify-end gap-2 text-[11px] opacity-70">
+                  <div className="mt-1 flex flex-wrap items-center justify-end gap-2 text-[11px] opacity-70">
                     <button onClick={() => setReplyTo(message)}>Reply</button>
-                    <button onClick={() => reactToMessage(message._id, "\u2764\ufe0f")}>React</button>
+                    <button
+                      onClick={() => {
+                        setReactingTo((current) => (current === message._id ? null : message._id));
+                        setReactPickerOpen(false);
+                      }}
+                    >
+                      React
+                    </button>
                     <button onClick={() => deleteMessageForMe(message._id)} title="Delete for me">Delete me</button>
                     {mine && <button onClick={() => deleteMessageForEveryone(message._id)} className="inline-flex items-center gap-1" title="Delete for everyone"><Trash2 size={12} /> All</button>}
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>
                     {mine && <CheckCheck size={13} />}
                   </div>
+                  {reactingTo === message._id && (
+                    <div className="mt-2 flex items-center gap-1">
+                      {["\u2764\ufe0f", "\ud83d\ude02", "\ud83d\ude2e", "\ud83d\ude2d", "\ud83d\udd25"].map((emo) => (
+                        <button
+                          key={emo}
+                          onClick={() => {
+                            reactToMessage(message._id, emo);
+                            setReactingTo(null);
+                          }}
+                          className="grid h-8 w-8 place-items-center rounded-full bg-black/10 text-sm dark:bg-white/10"
+                          title="React"
+                        >
+                          {emo}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setReactPickerOpen((v) => !v)}
+                        className="grid h-8 w-8 place-items-center rounded-full bg-black/10 text-sm dark:bg-white/10"
+                        title="More reactions"
+                      >
+                        +
+                      </button>
+                      {reactPickerOpen && (
+                        <div className="relative">
+                          <div className="absolute bottom-10 right-0 z-20 overflow-hidden rounded-xl">
+                            <button type="button" onClick={() => setReactPickerOpen(false)} className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"><X size={15} /></button>
+                            <EmojiPicker width={320} onEmojiClick={(e) => { reactToMessage(message._id, e.emoji); setReactPickerOpen(false); setReactingTo(null); }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {message.reactions?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {message.reactions.map((reaction, index) => (
@@ -357,6 +588,17 @@ export function ChatWindow({ onBack, className = "" }) {
       )}
 
       <form onSubmit={submit} className="glass m-2 flex flex-wrap items-center gap-2 rounded-2xl p-2 sm:m-3 sm:flex-nowrap sm:p-3">
+        {recording && (
+          <div className="flex w-full items-center justify-between rounded-xl bg-black/10 px-3 py-2 text-xs dark:bg-white/10 sm:hidden">
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-red-500" />
+              Recording {formatSecs(recordSeconds)}
+            </span>
+            <button type="button" onClick={toggleVoiceRecording} className="rounded-lg bg-teal-500 px-2 py-1 text-white">
+              Stop
+            </button>
+          </div>
+        )}
         <label className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Attach">
           <Paperclip size={20} />
           <input type="file" multiple hidden onChange={(e) => onFiles([...e.target.files])} />
@@ -364,6 +606,12 @@ export function ChatWindow({ onBack, className = "" }) {
         <button type="button" onClick={toggleVoiceRecording} className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10 ${recording ? "bg-teal-500 text-white" : ""}`} title={recording ? "Stop recording" : "Voice"}>
           {recording ? <Square size={18} /> : <Mic size={20} />}
         </button>
+        {recording && (
+          <div className="hidden items-center gap-2 rounded-xl bg-black/10 px-3 py-2 text-xs dark:bg-white/10 sm:flex">
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+            <span>Recording {formatSecs(recordSeconds)}</span>
+          </div>
+        )}
         <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Emoji" onClick={() => setEmojiOpen(!emojiOpen)}><Smile size={20} /></button>
         <div className="relative order-first w-full sm:order-none sm:flex-1">
           {emojiOpen && (
