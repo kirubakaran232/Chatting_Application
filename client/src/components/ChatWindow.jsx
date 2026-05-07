@@ -571,7 +571,12 @@ export function ChatWindow({ onBack, className = "" }) {
                     <button onClick={() => deleteMessageForMe(message._id)} title="Delete for me">Delete me</button>
                     {mine && <button onClick={() => deleteMessageForEveryone(message._id)} className="inline-flex items-center gap-1" title="Delete for everyone"><Trash2 size={12} /> All</button>}
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>
-                    {mine && <CheckCheck size={13} />}
+                    {mine && (
+                      <CheckCheck
+                        size={13}
+                        style={{ color: (message.seenBy && message.seenBy.length > 0) ? "#4da3ff" : "rgba(255,255,255,0.65)" }}
+                      />
+                    )}
                   </div>
                   {reactingTo === message._id && (
                     <div className="mt-2 flex items-center gap-1">

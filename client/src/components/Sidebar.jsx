@@ -15,6 +15,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
   const [archivedOnly, setArchivedOnly] = useState(false);
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [groupsOnly, setGroupsOnly] = useState(false);
+  const [storiesOnly, setStoriesOnly] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({ displayName: "", bio: "", avatar: "" });
   const [storyPrivacyMode, setStoryPrivacyMode] = useState("public");
@@ -73,7 +74,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
 
   return (
     <aside className={`glass h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl ${className}`}>
-      <div className="flex items-center gap-3 border-b border-black/5 p-3 dark:border-white/10 sm:p-4">
+      <div className="flex items-center gap-2 border-b border-black/5 p-2 dark:border-white/10 sm:gap-3 sm:p-4">
         <div className="relative">
           <img className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11" src={user.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`} alt="" />
           <button
@@ -84,9 +85,9 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
             <Plus size={14} />
           </button>
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate font-semibold text-slate-900 dark:text-white">{user.displayName}</p>
-          <p className="truncate text-sm text-slate-500">@{user.username}</p>
+          <p className="truncate text-xs text-slate-500 sm:text-sm">@{user.username}</p>
         </div>
         <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => { setProfileOpen(true); }} title="Edit profile">
           <Pencil size={18} />
@@ -137,10 +138,10 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
         <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setLockedOnly(!lockedOnly)} title="Hidden chats">
           <Lock size={18} className={lockedOnly ? "text-teal-500" : ""} />
         </button>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setDark(!dark)} title="Theme">
+        <button className="hidden rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 sm:inline-flex" onClick={() => setDark(!dark)} title="Theme">
           {dark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={logout} title="Sign out">
+        <button className="hidden rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 sm:inline-flex" onClick={logout} title="Sign out">
           <LogOut size={18} />
         </button>
       </div>
@@ -164,19 +165,20 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
 
       <div className="flex flex-wrap gap-2 px-4 pb-3 text-xs text-slate-500">
         <button
-          onClick={() => { setArchivedOnly(false); setPinnedOnly(false); setGroupsOnly(false); }}
-          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${!archivedOnly && !pinnedOnly && !groupsOnly ? "bg-teal-500 text-white" : ""}`}
+          onClick={() => { setStoriesOnly(false); setArchivedOnly(false); setPinnedOnly(false); setGroupsOnly(false); }}
+          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${!storiesOnly && !archivedOnly && !pinnedOnly && !groupsOnly ? "bg-teal-500 text-white" : ""}`}
         >
           <Users size={13} /> All
         </button>
-        <button onClick={() => { setPinnedOnly(true); setArchivedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${pinnedOnly ? "bg-teal-500 text-white" : ""}`}><Pin size={13} /> Pinned</button>
-        <button onClick={() => { setArchivedOnly(true); setPinnedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${archivedOnly ? "bg-teal-500 text-white" : ""}`}><Archive size={13} /> Archived</button>
-        <button onClick={() => { setGroupsOnly(true); setArchivedOnly(false); setPinnedOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${groupsOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Groups</button>
+        <button onClick={() => { setStoriesOnly(false); setPinnedOnly(true); setArchivedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${pinnedOnly ? "bg-teal-500 text-white" : ""}`}><Pin size={13} /> Pinned</button>
+        <button onClick={() => { setStoriesOnly(false); setArchivedOnly(true); setPinnedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${archivedOnly ? "bg-teal-500 text-white" : ""}`}><Archive size={13} /> Archived</button>
+        <button onClick={() => { setStoriesOnly(false); setGroupsOnly(true); setArchivedOnly(false); setPinnedOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${groupsOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Groups</button>
+        <button onClick={() => { setStoriesOnly(true); setArchivedOnly(false); setPinnedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${storiesOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Stories</button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
-        <StoriesBar />
-        {sortedChats.map((chat) => {
+        {storiesOnly ? <StoriesBar /> : null}
+        {!storiesOnly && sortedChats.map((chat) => {
           const other = chat.members?.find((member) => member._id !== user._id) || chat.members?.[0];
           const title = chat.type === "group" ? chat.name : other?.displayName;
           const locked = chat.lockedBy?.some((x) => x.user === user._id || x.user?._id === user._id);

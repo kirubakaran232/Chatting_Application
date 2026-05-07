@@ -61,6 +61,17 @@ export function ChatProvider({ children }) {
     nextSocket.on("typing:stop", ({ chatId }) => setTypingUsers((x) => ({ ...x, [chatId]: null })));
     nextSocket.on("presence:update", ({ userId, status, lastSeen }) => setPresence((x) => ({ ...x, [userId]: { status, lastSeen } })));
     nextSocket.on("call:offer", () => toast("Incoming call"));
+    nextSocket.on("message:seen", ({ chatId, userId }) => {
+      setMessages((items) =>
+        items.map((message) => {
+          if (String(message.chat) !== String(chatId)) return message;
+          if (message.sender?._id !== user._id) return message;
+          const seenBy = message.seenBy || [];
+          if (seenBy.some((x) => String(x.user?._id || x.user) === String(userId))) return message;
+          return { ...message, seenBy: [...seenBy, { user: userId, at: new Date().toISOString() }] };
+        })
+      );
+    });
     return () => nextSocket.disconnect();
   }, [user]);
 
