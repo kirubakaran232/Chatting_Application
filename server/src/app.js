@@ -18,14 +18,6 @@ export function createApp() {
   app.use(compression());
   app.use(express.json({ limit: "2mb" }));
 
-  const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 2000,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: "Too many requests. Please wait a moment and try again." }
-  });
-
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 80,
@@ -36,7 +28,6 @@ export function createApp() {
 
   app.get("/health", (_req, res) => res.json({ ok: true }));
   app.use("/api/auth", authLimiter, authRoutes);
-  app.use("/api", apiLimiter);
   app.use("/api/chats", chatRoutes);
   app.use("/api/messages", messageRoutes);
   app.use("/api/stories", storyRoutes);

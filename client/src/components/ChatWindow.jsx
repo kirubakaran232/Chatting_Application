@@ -22,6 +22,7 @@ export function ChatWindow({ onBack, className = "" }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [aiPanel, setAiPanel] = useState("");
+  const [sending, setSending] = useState(false);
   const bottom = useRef(null);
 
   const other = activeChat?.members?.find((member) => member._id !== user._id) || activeChat?.members?.[0];
@@ -41,8 +42,10 @@ export function ChatWindow({ onBack, className = "" }) {
 
   async function submit(e) {
     e.preventDefault();
+    if (sending) return;
     if (!text.trim() && attachments.length === 0) return;
     try {
+      setSending(true);
       await sendMessage({ text, attachments, replyTo: replyTo?._id });
       setText("");
       setAttachments([]);
@@ -50,6 +53,8 @@ export function ChatWindow({ onBack, className = "" }) {
       socket?.emit("typing:stop", { chatId: activeChat._id });
     } catch (error) {
       toast.error(error.response?.data?.message || "Message could not be sent");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -246,7 +251,9 @@ export function ChatWindow({ onBack, className = "" }) {
         <button type="button" onClick={() => aiAction("suggest")} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-pink-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI replies"><Sparkles size={20} /></button>
         <button type="button" onClick={() => aiAction("summarize")} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-teal-500 hover:bg-black/5 dark:hover:bg-white/10" title="AI summary"><Bot size={20} /></button>
         <button type="button" onClick={() => aiAction("translate", { language: "English" })} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl hover:bg-black/5 dark:hover:bg-white/10" title="Translate"><Languages size={20} /></button>
-        <button className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-500 text-white sm:ml-0 sm:h-11 sm:w-11" title="Send"><Send size={20} /></button>
+        <button disabled={sending} className="ml-auto grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-500 text-white disabled:cursor-not-allowed disabled:opacity-60 sm:ml-0 sm:h-11 sm:w-11" title="Send">
+          <Send size={20} />
+        </button>
       </form>
     </main>
   );
