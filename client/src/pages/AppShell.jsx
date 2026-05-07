@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { ChatProvider } from "../context/ChatContext";
 import { Sidebar } from "../components/Sidebar";
 import { ChatWindow } from "../components/ChatWindow";
+import { StoryComposer } from "../components/StoryComposer";
 
 function ResponsiveChatLayout({ dark, setDark, lockedOnly, setLockedOnly }) {
   const [mobileView, setMobileView] = useState("sidebar");
+  const [storyOpen, setStoryOpen] = useState(false);
 
   function openMobileChat() {
     setMobileView("chat");
@@ -36,12 +38,14 @@ function ResponsiveChatLayout({ dark, setDark, lockedOnly, setLockedOnly }) {
         lockedOnly={lockedOnly}
         setLockedOnly={setLockedOnly}
         onOpenChat={openMobileChat}
+        onNewStory={() => setStoryOpen(true)}
         className={mobileView === "chat" ? "hidden md:flex" : "flex"}
       />
       <ChatWindow
         onBack={closeMobileChat}
         className={mobileView === "chat" ? "flex" : "hidden md:flex"}
       />
+      <StoryComposer open={storyOpen} onClose={() => setStoryOpen(false)} />
     </div>
   );
 }

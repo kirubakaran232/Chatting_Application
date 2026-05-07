@@ -33,6 +33,7 @@ export function ChatWindow({ onBack, className = "" }) {
   const [callStatus, setCallStatus] = useState("idle"); // idle | calling | incoming | in-call
   const [incomingOffer, setIncomingOffer] = useState(null);
   const [muted, setMuted] = useState(false);
+  const [callKind, setCallKind] = useState("audio"); // audio | video | screen
   const bottom = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -40,6 +41,8 @@ export function ChatWindow({ onBack, className = "" }) {
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const remoteAudioRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
 
   const other = activeChat?.members?.find((member) => member._id !== user._id) || activeChat?.members?.[0];
   const title = activeChat?.type === "group" ? activeChat?.name : other?.displayName;
@@ -85,10 +88,13 @@ export function ChatWindow({ onBack, className = "" }) {
     localStreamRef.current = null;
     remoteStreamRef.current = null;
     if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     setCallStatus("idle");
     setIncomingOffer(null);
     setMuted(false);
     setCallOpen(false);
+    setCallKind("audio");
   }
 
   function ensurePeerConnection() {
@@ -103,6 +109,7 @@ export function ChatWindow({ onBack, className = "" }) {
       const [stream] = event.streams;
       remoteStreamRef.current = stream;
       if (remoteAudioRef.current) remoteAudioRef.current.srcObject = stream;
+      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream;
     };
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
@@ -113,18 +120,36 @@ export function ChatWindow({ onBack, className = "" }) {
     return pc;
   }
 
-  async function startOutgoingCall() {
+  async function startOutgoingCall(kind = "audio") {
     if (!socket || !activeChat) return;
     try {
       setCallOpen(true);
       setCallStatus("calling");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      setCallKind(kind);
+      let stream = null;
+      if (kind === "video") {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      } else if (kind === "screen") {
+        const display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        let mic = null;
+        try {
+          mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        } catch {
+          mic = null;
+        }
+        const tracks = [...display.getTracks(), ...(mic ? mic.getTracks() : [])];
+        stream = new MediaStream(tracks);
+        display.getVideoTracks()[0]?.addEventListener?.("ended", () => endCall());
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
       localStreamRef.current = stream;
+      if (localVideoRef.current && kind !== "audio") localVideoRef.current.srcObject = stream;
       const pc = ensurePeerConnection();
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socket.emit("call:offer", { chatId: activeChat._id, sdp: offer });
+      socket.emit("call:offer", { chatId: activeChat._id, sdp: offer, kind });
     } catch {
       toast.error("Microphone permission was blocked");
       cleanupCall();
@@ -135,8 +160,26 @@ export function ChatWindow({ onBack, className = "" }) {
     if (!socket || !incomingOffer || !activeChat) return;
     try {
       setCallOpen(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      setCallKind(incomingOffer.kind || "audio");
+      let stream = null;
+      if (incomingOffer.kind === "video") {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      } else if (incomingOffer.kind === "screen") {
+        const display = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        let mic = null;
+        try {
+          mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        } catch {
+          mic = null;
+        }
+        const tracks = [...display.getTracks(), ...(mic ? mic.getTracks() : [])];
+        stream = new MediaStream(tracks);
+        display.getVideoTracks()[0]?.addEventListener?.("ended", () => endCall());
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
       localStreamRef.current = stream;
+      if (localVideoRef.current && (incomingOffer.kind || "audio") !== "audio") localVideoRef.current.srcObject = stream;
       const pc = ensurePeerConnection();
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
       await pc.setRemoteDescription(incomingOffer.sdp);
@@ -382,9 +425,9 @@ export function ChatWindow({ onBack, className = "" }) {
           <p className="truncate text-sm text-slate-500">{typingUsers[activeChat._id] ? `${typingUsers[activeChat._id].displayName} is typing...` : activeChat.type}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button onClick={startOutgoingCall} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
-          <button className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Video call"><Video size={19} /></button>
-          <button className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Screen share"><ScreenShare size={19} /></button>
+          <button onClick={() => startOutgoingCall("audio")} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
+          <button onClick={() => startOutgoingCall("video")} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Video call"><Video size={19} /></button>
+          <button onClick={() => startOutgoingCall("screen")} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Screen share"><ScreenShare size={19} /></button>
           <button onClick={() => setLockModalOpen(true)} className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 sm:grid" title="Lock chat"><Lock size={19} /></button>
         </div>
         <div className="relative shrink-0">
@@ -398,7 +441,8 @@ export function ChatWindow({ onBack, className = "" }) {
               <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> {pinned ? "Unpin chat" : "Pin chat"}</button>
               <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> {archived ? "Unarchive chat" : "Archive chat"}</button>
               <button onClick={() => { setLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Lock size={16} /> Lock chat</button>
-              <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
+              <button onClick={() => startOutgoingCall("video")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
+              <button onClick={() => startOutgoingCall("screen")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><ScreenShare size={16} /> Share screen</button>
               {locked && <button onClick={() => { setRemoveLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Unlock size={16} /> Remove lock</button>}
               <button onClick={() => aiAction("summarize")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Bot size={16} /> AI summary</button>
               <button onClick={() => runMenuAction("report")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Flag size={16} /> Report chat</button>
@@ -456,6 +500,14 @@ export function ChatWindow({ onBack, className = "" }) {
               <button onClick={endCall} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" title="Close"><X size={18} /></button>
             </div>
             <audio ref={remoteAudioRef} autoPlay />
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              {callKind !== "audio" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <video ref={localVideoRef} autoPlay muted playsInline className="aspect-video w-full rounded-xl bg-black/30 object-cover" />
+                  <video ref={remoteVideoRef} autoPlay playsInline className="aspect-video w-full rounded-xl bg-black/30 object-cover" />
+                </div>
+              )}
+            </div>
             <div className="mt-4 flex gap-2">
               {callStatus === "incoming" && (
                 <>

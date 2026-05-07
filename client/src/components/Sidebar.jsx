@@ -6,7 +6,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 
-export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, className = "" }) {
+export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, onNewStory, className = "" }) {
   const { user, logout, updateProfile } = useAuth();
   const { chats, openChat, activeChat, presence, autoLocked, updateChat } = useChat();
   const [q, setQ] = useState("");
@@ -18,6 +18,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
   const [profileForm, setProfileForm] = useState({ displayName: "", bio: "", avatar: "" });
   const [savingProfile, setSavingProfile] = useState(false);
   const searchRef = useRef(null);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
 
   useEffect(() => {
     setProfileForm({ displayName: user?.displayName || "", bio: user?.bio || "", avatar: user?.avatar || "" });
@@ -67,9 +68,37 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
         <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => { setProfileOpen(true); }} title="Edit profile">
           <Pencil size={18} />
         </button>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => { searchRef.current?.focus(); }} title="New chat">
-          <Plus size={18} />
-        </button>
+        <div className="relative">
+          <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setPlusMenuOpen((v) => !v)} title="Create">
+            <Plus size={18} />
+          </button>
+          {plusMenuOpen && (
+            <div className="glass absolute right-0 top-11 z-30 w-44 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
+              <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
+                <span>Create</span>
+                <button onClick={() => setPlusMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
+              </div>
+              <button
+                onClick={() => {
+                  setPlusMenuOpen(false);
+                  onNewStory?.();
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                New story
+              </button>
+              <button
+                onClick={() => {
+                  setPlusMenuOpen(false);
+                  searchRef.current?.focus();
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                New chat
+              </button>
+            </div>
+          )}
+        </div>
         <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setLockedOnly(!lockedOnly)} title="Hidden chats">
           <Lock size={18} className={lockedOnly ? "text-teal-500" : ""} />
         </button>
