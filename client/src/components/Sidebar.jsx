@@ -73,10 +73,19 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
   });
 
   return (
-    <aside className={`glass h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl ${className}`}>
+    <aside
+      className={`glass h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl ${className}`}
+    >
       <div className="flex items-center gap-2 border-b border-black/5 p-2 dark:border-white/10 sm:gap-3 sm:p-4">
         <div className="relative">
-          <img className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11" src={user.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`} alt="" />
+          <img
+            className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11"
+            src={
+              user.avatar ||
+              `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`
+            }
+            alt=""
+          />
           <button
             onClick={() => onNewStory?.()}
             className="absolute -bottom-1 -right-1 hidden h-6 w-6 items-center justify-center rounded-full bg-teal-500 text-white shadow-lg md:flex"
@@ -86,10 +95,20 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
           </button>
         </div>
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate font-semibold text-slate-900 dark:text-white">{user.displayName}</p>
-          <p className="truncate text-xs text-slate-500 sm:text-sm">@{user.username}</p>
+          <p className="truncate font-semibold text-slate-900 dark:text-white">
+            {user.displayName}
+          </p>
+          <p className="truncate text-xs text-slate-500 sm:text-sm">
+            @{user.username}
+          </p>
         </div>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => { setProfileOpen(true); }} title="Edit profile">
+        <button
+          className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"
+          onClick={() => {
+            setProfileOpen(true);
+          }}
+          title="Edit profile"
+        >
           <Pencil size={18} />
         </button>
         <div className="relative">
@@ -112,7 +131,12 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
             <div className="glass absolute right-0 top-11 z-30 w-44 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
               <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
                 <span>Create</span>
-                <button onClick={() => setPlusMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
+                <button
+                  onClick={() => setPlusMenuOpen(false)}
+                  className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <X size={14} />
+                </button>
               </div>
               <button
                 onClick={() => {
@@ -135,13 +159,25 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
             </div>
           )}
         </div>
-        <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setLockedOnly(!lockedOnly)} title="Hidden chats">
+        <button
+          className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"
+          onClick={() => setLockedOnly(!lockedOnly)}
+          title="Hidden chats"
+        >
           <Lock size={18} className={lockedOnly ? "text-teal-500" : ""} />
         </button>
-        <button className="hidden rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 sm:inline-flex" onClick={() => setDark(!dark)} title="Theme">
+        <button
+          className="hidden rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 sm:inline-flex"
+          onClick={() => setDark(!dark)}
+          title="Theme"
+        >
           {dark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
-        <button className="hidden rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 sm:inline-flex" onClick={logout} title="Sign out">
+        <button
+          className="hidden rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 sm:inline-flex"
+          onClick={logout}
+          title="Sign out"
+        >
           <LogOut size={18} />
         </button>
       </div>
@@ -149,13 +185,30 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
       <div className="p-4">
         <div className="flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2 dark:bg-white/10">
           <Search size={17} className="text-slate-400" />
-          <input ref={searchRef} value={q} onChange={(e) => search(e.target.value)} className="w-full bg-transparent text-sm outline-none" placeholder="Search by username" />
+          <input
+            ref={searchRef}
+            value={q}
+            onChange={(e) => search(e.target.value)}
+            className="w-full bg-transparent text-sm outline-none"
+            placeholder="Search by username"
+          />
         </div>
         {results.length > 0 && (
           <div className="mt-2 overflow-hidden rounded-xl border border-black/5 bg-white shadow-lg dark:border-white/10 dark:bg-slate-900">
             {results.map((item) => (
-              <button key={item._id} onClick={() => start(item.username)} className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-teal-50 dark:hover:bg-white/10">
-                <img className="h-8 w-8 rounded-full" src={item.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${item.displayName}`} alt="" />
+              <button
+                key={item._id}
+                onClick={() => start(item.username)}
+                className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-teal-50 dark:hover:bg-white/10"
+              >
+                <img
+                  className="h-8 w-8 rounded-full"
+                  src={
+                    item.avatar ||
+                    `https://api.dicebear.com/8.x/initials/svg?seed=${item.displayName}`
+                  }
+                  alt=""
+                />
                 <span className="text-sm">@{item.username}</span>
               </button>
             ))}
@@ -165,60 +218,120 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
 
       <div className="flex flex-wrap gap-2 px-4 pb-3 text-xs text-slate-500">
         <button
-          onClick={() => { setStoriesOnly(false); setArchivedOnly(false); setPinnedOnly(false); setGroupsOnly(false); }}
+          onClick={() => {
+            setStoriesOnly(false);
+            setArchivedOnly(false);
+            setPinnedOnly(false);
+            setGroupsOnly(false);
+          }}
           className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${!storiesOnly && !archivedOnly && !pinnedOnly && !groupsOnly ? "bg-teal-500 text-white" : ""}`}
         >
           <Users size={13} /> All
         </button>
-        <button onClick={() => { setStoriesOnly(false); setPinnedOnly(true); setArchivedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${pinnedOnly ? "bg-teal-500 text-white" : ""}`}><Pin size={13} /> Pinned</button>
-        <button onClick={() => { setStoriesOnly(false); setArchivedOnly(true); setPinnedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${archivedOnly ? "bg-teal-500 text-white" : ""}`}><Archive size={13} /> Archived</button>
+        <button
+          onClick={() => {
+            setStoriesOnly(true);
+            setArchivedOnly(false);
+            setPinnedOnly(false);
+            setGroupsOnly(false);
+          }}
+          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${storiesOnly ? "bg-teal-500 text-white" : ""}`}
+        >
+          <Users size={13} /> Stories
+        </button>
+        <button
+          onClick={() => {
+            setStoriesOnly(false);
+            setPinnedOnly(true);
+            setArchivedOnly(false);
+            setGroupsOnly(false);
+          }}
+          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${pinnedOnly ? "bg-teal-500 text-white" : ""}`}
+        >
+          <Pin size={13} /> Pinned
+        </button>
+        <button
+          onClick={() => {
+            setStoriesOnly(false);
+            setArchivedOnly(true);
+            setPinnedOnly(false);
+            setGroupsOnly(false);
+          }}
+          className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${archivedOnly ? "bg-teal-500 text-white" : ""}`}
+        >
+          <Archive size={13} /> Archived
+        </button>
         {/* <button onClick={() => { setStoriesOnly(false); setGroupsOnly(true); setArchivedOnly(false); setPinnedOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${groupsOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Groups</button> */}
-        <button onClick={() => { setStoriesOnly(true); setArchivedOnly(false); setPinnedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${storiesOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Stories</button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         {storiesOnly ? <StoriesBar /> : null}
-        {!storiesOnly && sortedChats.map((chat) => {
-          const other = chat.members?.find((member) => member._id !== user._id) || chat.members?.[0];
-          const title = chat.type === "group" ? chat.name : other?.displayName;
-          const locked = chat.lockedBy?.some((x) => x.user === user._id || x.user?._id === user._id);
-          const online = presence[other?._id]?.status === "online" || other?.status === "online";
-          return (
-            <motion.button
-              layout
-              key={chat._id}
-              onClick={async () => {
-                await openChat(chat);
-                onOpenChat?.();
-              }}
-              className={`mb-2 flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${activeChat?._id === chat._id ? "bg-teal-500 text-white shadow-glow" : "hover:bg-white/70 dark:hover:bg-white/10"}`}
-            >
-              <div className="relative">
-                <img className="h-12 w-12 rounded-full object-cover" src={chat.avatar || other?.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${title}`} alt="" />
-                {online && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />}
-              </div>
-              <div className={`min-w-0 flex-1 ${locked || autoLocked ? "blur-[2px]" : ""}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate font-medium">{title}</p>
-                  {locked && <Lock size={14} />}
+        {!storiesOnly &&
+          sortedChats.map((chat) => {
+            const other =
+              chat.members?.find((member) => member._id !== user._id) ||
+              chat.members?.[0];
+            const title =
+              chat.type === "group" ? chat.name : other?.displayName;
+            const locked = chat.lockedBy?.some(
+              (x) => x.user === user._id || x.user?._id === user._id,
+            );
+            const online =
+              presence[other?._id]?.status === "online" ||
+              other?.status === "online";
+            return (
+              <motion.button
+                layout
+                key={chat._id}
+                onClick={async () => {
+                  await openChat(chat);
+                  onOpenChat?.();
+                }}
+                className={`mb-2 flex w-full items-center gap-3 rounded-xl p-3 text-left transition ${activeChat?._id === chat._id ? "bg-teal-500 text-white shadow-glow" : "hover:bg-white/70 dark:hover:bg-white/10"}`}
+              >
+                <div className="relative">
+                  <img
+                    className="h-12 w-12 rounded-full object-cover"
+                    src={
+                      chat.avatar ||
+                      other?.avatar ||
+                      `https://api.dicebear.com/8.x/initials/svg?seed=${title}`
+                    }
+                    alt=""
+                  />
+                  {online && (
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
+                  )}
                 </div>
-                <p className="truncate text-sm opacity-70">{chat.lastMessage?.text || "No messages yet"}</p>
-                {archivedOnly && (
-                  <span
-                    onClick={async (event) => {
-                      event.stopPropagation();
-                      const { data } = await api.patch(`/chats/${chat._id}/action`, { action: "archive" });
-                      updateChat(chat._id, data.chat);
-                    }}
-                    className="mt-2 inline-flex rounded-lg bg-white/20 px-2 py-1 text-xs"
-                  >
-                    Unarchive
-                  </span>
-                )}
-              </div>
-            </motion.button>
-          );
-        })}
+                <div
+                  className={`min-w-0 flex-1 ${locked || autoLocked ? "blur-[2px]" : ""}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate font-medium">{title}</p>
+                    {locked && <Lock size={14} />}
+                  </div>
+                  <p className="truncate text-sm opacity-70">
+                    {chat.lastMessage?.text || "No messages yet"}
+                  </p>
+                  {archivedOnly && (
+                    <span
+                      onClick={async (event) => {
+                        event.stopPropagation();
+                        const { data } = await api.patch(
+                          `/chats/${chat._id}/action`,
+                          { action: "archive" },
+                        );
+                        updateChat(chat._id, data.chat);
+                      }}
+                      className="mt-2 inline-flex rounded-lg bg-white/20 px-2 py-1 text-xs"
+                    >
+                      Unarchive
+                    </span>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
       </div>
 
       {profileOpen && (
@@ -232,12 +345,17 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
                   displayName: profileForm.displayName,
                   bio: profileForm.bio,
                   avatar: profileForm.avatar,
-                  storyPrivacy: { mode: storyPrivacyMode, allowedUsers: storyAllowed }
+                  storyPrivacy: {
+                    mode: storyPrivacyMode,
+                    allowedUsers: storyAllowed,
+                  },
                 });
                 toast.success("Profile updated");
                 setProfileOpen(false);
               } catch (error) {
-                toast.error(error.response?.data?.message || "Profile update failed");
+                toast.error(
+                  error.response?.data?.message || "Profile update failed",
+                );
               } finally {
                 setSavingProfile(false);
               }
@@ -246,26 +364,81 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Edit profile</h2>
-                <p className="mt-1 text-sm text-slate-500">Username cannot be changed.</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Edit profile
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Username cannot be changed.
+                </p>
               </div>
-              <button type="button" onClick={() => setProfileOpen(false)} className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"><X size={18} /></button>
+              <button
+                type="button"
+                onClick={() => setProfileOpen(false)}
+                className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                <X size={18} />
+              </button>
             </div>
             <div className="mt-4 space-y-3">
-              <input value={profileForm.displayName} onChange={(e) => setProfileForm((x) => ({ ...x, displayName: e.target.value }))} className="w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10" placeholder="Display name" />
-              <input value={profileForm.avatar} onChange={(e) => setProfileForm((x) => ({ ...x, avatar: e.target.value }))} className="w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10" placeholder="Avatar URL" />
-              <textarea value={profileForm.bio} onChange={(e) => setProfileForm((x) => ({ ...x, bio: e.target.value }))} className="min-h-24 w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10" placeholder="Bio" />
-              <input value={user.username} disabled className="w-full cursor-not-allowed rounded-xl bg-white/40 px-4 py-3 text-slate-500 outline-none dark:bg-white/5" />
+              <input
+                value={profileForm.displayName}
+                onChange={(e) =>
+                  setProfileForm((x) => ({ ...x, displayName: e.target.value }))
+                }
+                className="w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10"
+                placeholder="Display name"
+              />
+              <input
+                value={profileForm.avatar}
+                onChange={(e) =>
+                  setProfileForm((x) => ({ ...x, avatar: e.target.value }))
+                }
+                className="w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10"
+                placeholder="Avatar URL"
+              />
+              <textarea
+                value={profileForm.bio}
+                onChange={(e) =>
+                  setProfileForm((x) => ({ ...x, bio: e.target.value }))
+                }
+                className="min-h-24 w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10"
+                placeholder="Bio"
+              />
+              <input
+                value={user.username}
+                disabled
+                className="w-full cursor-not-allowed rounded-xl bg-white/40 px-4 py-3 text-slate-500 outline-none dark:bg-white/5"
+              />
               <div className="rounded-xl bg-white/40 p-3 dark:bg-white/5">
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">Status privacy</p>
-                <p className="mt-1 text-xs text-slate-500">Choose who can see your stories.</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Status privacy
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Choose who can see your stories.
+                </p>
                 <div className="mt-2 flex gap-2">
-                  <button type="button" onClick={() => setStoryPrivacyMode("public")} className={`rounded-lg px-3 py-2 text-sm ${storyPrivacyMode === "public" ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}>Public</button>
-                  <button type="button" onClick={() => setStoryPrivacyMode("selected")} className={`rounded-lg px-3 py-2 text-sm ${storyPrivacyMode === "selected" ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}>Selected</button>
+                  <button
+                    type="button"
+                    onClick={() => setStoryPrivacyMode("public")}
+                    className={`rounded-lg px-3 py-2 text-sm ${storyPrivacyMode === "public" ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}
+                  >
+                    Public
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStoryPrivacyMode("selected")}
+                    className={`rounded-lg px-3 py-2 text-sm ${storyPrivacyMode === "selected" ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}
+                  >
+                    Selected
+                  </button>
                 </div>
                 {storyPrivacyMode === "selected" && (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {contactOptions.length === 0 && <span className="text-xs text-slate-500">No chatted users yet.</span>}
+                    {contactOptions.length === 0 && (
+                      <span className="text-xs text-slate-500">
+                        No chatted users yet.
+                      </span>
+                    )}
                     {contactOptions.map((m) => {
                       const id = String(m._id || m);
                       const label = m.displayName || m.username || id;
@@ -274,7 +447,13 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
                         <button
                           key={id}
                           type="button"
-                          onClick={() => setStoryAllowed((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]))}
+                          onClick={() =>
+                            setStoryAllowed((arr) =>
+                              arr.includes(id)
+                                ? arr.filter((x) => x !== id)
+                                : [...arr, id],
+                            )
+                          }
                           className={`rounded-full px-3 py-1 text-xs ${on ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}
                         >
                           {label}
@@ -285,7 +464,10 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
                 )}
               </div>
             </div>
-            <button disabled={savingProfile} className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white disabled:opacity-60">
+            <button
+              disabled={savingProfile}
+              className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white disabled:opacity-60"
+            >
               Save
             </button>
           </form>
