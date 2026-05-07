@@ -5,15 +5,15 @@ import { Message } from "../models/Message.js";
 import { User } from "../models/User.js";
 
 const onlineUsers = new Map();
-const activeCalls = new Map(); // chatId -> { startedBy, kind, startedAt }
+const activeCalls = new Map(); // chatId -> { startedAt: number, kind: string }
 
-async function emitCallLog({ io, chatId, senderId, text }) {
+async function emitSystemMessage(io, chatId, senderId, text) {
   const chat = await Chat.findById(chatId);
   if (!chat) return;
   const message = await Message.create({
     chat: chat._id,
     sender: senderId,
-    text
+    text: String(text || "")
   });
   chat.lastMessage = message._id;
   await chat.save();
@@ -72,11 +72,12 @@ export function registerSockets(io) {
 
     socket.on("call:offer", async (payload) => {
       socket.to(String(payload.chatId)).emit("call:offer", { ...payload, from: userId });
-      // Log call start once per chat.
-      if (!activeCalls.has(String(payload.chatId))) {
-        activeCalls.set(String(payload.chatId), { startedBy: userId, kind: payload.kind || "audio", startedAt: Date.now() });
-        const label = payload.kind === "video" ? "Video call" : payload.kind === "screen" ? "Screen share" : "Voice call";
-        await emitCallLog({ io, chatId: payload.chatId, senderId: userId, text: `📞 ${label}` });
+      const key = String(payload.chatId);
+      if (!activeCalls.has(key)) {
+        const kind = payload.kind || "audio";
+        activeCalls.set(key, { startedAt: Date.now(), kind });
+        const label = kind === "video" ? "Video call" : kind === "screen" ? "Screen share" : "Voice call";
+        await emitSystemMessage(io, payload.chatId, userId, `${label} started`);
       }
     });
     socket.on("call:answer", (payload) => socket.to(String(payload.chatId)).emit("call:answer", { ...payload, from: userId }));
@@ -85,13 +86,11 @@ export function registerSockets(io) {
       socket.to(String(payload.chatId)).emit("call:end", { ...payload, from: userId });
       const key = String(payload.chatId);
       const call = activeCalls.get(key);
-      if (call) {
-        activeCalls.delete(key);
-        const secs = Math.max(0, Math.round((Date.now() - call.startedAt) / 1000));
-        const mm = String(Math.floor(secs / 60)).padStart(2, "0");
-        const ss = String(secs % 60).padStart(2, "0");
-        await emitCallLog({ io, chatId: payload.chatId, senderId: userId, text: `Call ended • ${mm}:${ss}` });
-      }
+      activeCalls.delete(key);
+      const secs = call ? Math.max(0, Math.round((Date.now() - call.startedAt) / 1000)) : 0;
+      const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+      const ss = String(secs % 60).padStart(2, "0");
+      await emitSystemMessage(io, payload.chatId, userId, `Call ended (${mm}:${ss})`);
     });
 
     socket.on("disconnect", async () => {

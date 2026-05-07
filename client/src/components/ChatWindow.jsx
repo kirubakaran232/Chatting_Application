@@ -35,6 +35,7 @@ export function ChatWindow({ onBack, className = "" }) {
   const [muted, setMuted] = useState(false);
   const [callKind, setCallKind] = useState("audio"); // audio | video | screen
   const bottom = useRef(null);
+  const menuRef = useRef(null);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const pcRef = useRef(null);
@@ -65,6 +66,17 @@ export function ChatWindow({ onBack, className = "" }) {
     setReactPickerOpen(false);
     setEmojiOpen(false);
   }, [activeChat?._id]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (!recording) return undefined;
@@ -414,7 +426,7 @@ export function ChatWindow({ onBack, className = "" }) {
   }
 
   return (
-    <main className={`${className} relative min-w-0 flex-1 flex-col`}>
+    <main className={`${className} min-w-0 flex-1 flex-col`}>
       {/* Sticky header stays visible on real mobile browsers without being hidden/clipped. */}
       <div className="glass sticky top-0 z-30 flex min-h-16 w-full min-w-0 items-center gap-2 overflow-visible border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
         <button onClick={onBack} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden" title="Back to chats">
@@ -437,8 +449,7 @@ export function ChatWindow({ onBack, className = "" }) {
           <button onClick={() => setMenuOpen((open) => !open)} className="grid h-10 w-10 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="More"><MoreVertical size={19} /></button>
           {menuOpen && (
             <>
-              <button type="button" className="absolute inset-0 z-40 cursor-default" onClick={() => setMenuOpen(false)} aria-label="Close menu" />
-              <div className="glass absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
+              <div ref={menuRef} className="glass absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
                 <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
                   <span>Options</span>
                   <button onClick={() => setMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
@@ -648,7 +659,7 @@ export function ChatWindow({ onBack, className = "" }) {
         </div>
       )}
 
-      <form onSubmit={submit} className="glass m-2 shrink-0 flex flex-wrap items-center gap-2 rounded-2xl p-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] sm:m-3 sm:flex-nowrap sm:p-3">
+      <form onSubmit={submit} className="glass m-2 shrink-0 flex flex-wrap items-center gap-2 rounded-2xl p-2 pb-[env(safe-area-inset-bottom,0px)] sm:m-3 sm:flex-nowrap sm:p-3">
         {recording && (
           <div className="flex w-full items-center justify-between rounded-xl bg-black/10 px-3 py-2 text-xs dark:bg-white/10 sm:hidden">
             <span className="inline-flex items-center gap-2">

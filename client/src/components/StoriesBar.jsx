@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "../lib/api";
@@ -26,10 +26,10 @@ export function StoriesBar({ onNewStory }) {
         <button
           type="button"
           onClick={() => onNewStory?.()}
-          className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/10"
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/10"
           title="New story"
         >
-          New
+          <Plus size={14} /> Add story
         </button>
       </div>
       <div className="mt-2 space-y-2">
