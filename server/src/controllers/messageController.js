@@ -42,7 +42,6 @@ export const uploadMedia = asyncHandler(async (req, res) => {
 export const sendMessage = asyncHandler(async (req, res) => {
   const chat = await Chat.findOne({ _id: req.params.chatId, members: req.user._id });
   if (!chat) return res.status(404).json({ message: "Chat not found" });
-  const spamScore = req.body.text ? await ai.spamScore(req.body.text) : 0;
   const message = await Message.create({
     chat: chat._id,
     sender: req.user._id,
@@ -52,7 +51,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     scheduledFor: req.body.scheduledFor,
     selfDestructAt: req.body.selfDestructAt,
     poll: req.body.poll,
-    spamScore
+    spamScore: 0
   });
   chat.lastMessage = message._id;
   await chat.save();
@@ -85,13 +84,18 @@ export const deleteForEveryone = asyncHandler(async (req, res) => {
 });
 
 export const aiTools = asyncHandler(async (req, res) => {
-  const { action, text, language, chatId } = req.body;
-  if (action === "summarize") {
-    const messages = await Message.find({ chat: chatId }).sort({ createdAt: -1 }).limit(80).populate("sender", "displayName");
-    const transcript = messages.reverse().map((m) => `${m.sender.displayName}: ${m.text}`).join("\n");
-    return res.json({ result: await ai.summarize(transcript) });
+  try {
+    const { action, text, language, chatId } = req.body;
+    if (action === "summarize") {
+      const messages = await Message.find({ chat: chatId }).sort({ createdAt: -1 }).limit(80).populate("sender", "displayName");
+      const transcript = messages.reverse().map((m) => `${m.sender.displayName}: ${m.text}`).join("\n");
+      return res.json({ result: await ai.summarize(transcript) });
+    }
+    if (action === "suggest") return res.json({ result: await ai.suggestReply(text) });
+    if (action === "translate") return res.json({ result: await ai.translate(text, language || "English") });
+    return res.status(422).json({ message: "Unknown AI action" });
+  } catch (error) {
+    console.error(error);
+    return res.status(503).json({ message: "AI is temporarily unavailable. Normal chat still works." });
   }
-  if (action === "suggest") return res.json({ result: await ai.suggestReply(text) });
-  if (action === "translate") return res.json({ result: await ai.translate(text, language || "English") });
-  res.status(422).json({ message: "Unknown AI action" });
 });
