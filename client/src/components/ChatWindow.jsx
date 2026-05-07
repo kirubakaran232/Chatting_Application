@@ -434,8 +434,8 @@ export function ChatWindow({ onBack, className = "" }) {
 
   return (
     <main className={`${className} min-w-0 flex-1 flex-col`}>
-      {/* Sticky header stays visible on real mobile browsers without being hidden/clipped. */}
-      <div className="glass sticky top-0 z-30 flex min-h-16 w-full min-w-0 items-center gap-2 overflow-visible border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
+      {/* Mobile: fixed header avoids sticky + overflow quirks on real devices. */}
+      <div className="glass fixed top-0 left-0 right-0 z-30 flex min-h-16 w-full min-w-0 items-center gap-2 overflow-visible border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2 md:static">
         <button
           onClick={onBack}
           className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden"
@@ -766,8 +766,8 @@ export function ChatWindow({ onBack, className = "" }) {
       )}
 
       <div
-        className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4"
-       onDragOver={(e) => e.preventDefault()}
+        className="min-h-0 flex-1 overflow-y-auto p-3 pt-20 pb-32 sm:p-4 md:pt-4 md:pb-4"
+        onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
           onFiles([...e.dataTransfer.files]);
@@ -1009,7 +1009,7 @@ export function ChatWindow({ onBack, className = "" }) {
 
       <form
         onSubmit={submit}
-        className="glass m-2 shrink-0 flex flex-wrap items-center gap-2 rounded-2xl p-2 pb-[env(safe-area-inset-bottom,0px)] sm:m-3 sm:flex-nowrap sm:p-3"
+        className="glass fixed left-0 right-0 bottom-[env(safe-area-inset-bottom,0px)] z-30 m-0 shrink-0 flex flex-wrap items-center gap-2 rounded-2xl p-2 sm:flex-nowrap sm:p-3 md:static md:m-2"
       >
         {recording && (
           <div className="flex w-full items-center justify-between rounded-xl bg-black/10 px-3 py-2 text-xs dark:bg-white/10 sm:hidden">
