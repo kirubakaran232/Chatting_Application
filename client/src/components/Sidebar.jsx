@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
+import { StoriesBar } from "./StoriesBar";
 
 export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, onNewStory, className = "" }) {
   const { user, logout, updateProfile } = useAuth();
@@ -16,13 +17,26 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
   const [groupsOnly, setGroupsOnly] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({ displayName: "", bio: "", avatar: "" });
+  const [storyPrivacyMode, setStoryPrivacyMode] = useState("public");
+  const [storyAllowed, setStoryAllowed] = useState([]);
   const [savingProfile, setSavingProfile] = useState(false);
   const searchRef = useRef(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
 
   useEffect(() => {
     setProfileForm({ displayName: user?.displayName || "", bio: user?.bio || "", avatar: user?.avatar || "" });
+    setStoryPrivacyMode(user?.storyPrivacy?.mode || "public");
+    setStoryAllowed(user?.storyPrivacy?.allowedUsers || []);
   }, [user?._id]);
+
+  const contactOptions = Array.from(
+    new Map(
+      chats
+        .flatMap((c) => c.members || [])
+        .filter((m) => (m?._id || m) && String(m._id || m) !== String(user._id))
+        .map((m) => [String(m._id || m), m])
+    ).values()
+  );
 
   async function search(value) {
     setQ(value);
@@ -59,9 +73,9 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
 
   return (
     <aside className={`glass h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl ${className}`}>
-      <div className="flex items-center gap-3 border-b border-black/5 p-4 dark:border-white/10">
+      <div className="flex items-center gap-3 border-b border-black/5 p-3 dark:border-white/10 sm:p-4">
         <div className="relative">
-          <img className="h-11 w-11 rounded-full object-cover" src={user.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`} alt="" />
+          <img className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11" src={user.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`} alt="" />
           <button
             onClick={() => onNewStory?.()}
             className="absolute -bottom-1 -right-1 hidden h-6 w-6 items-center justify-center rounded-full bg-teal-500 text-white shadow-lg md:flex"
@@ -161,6 +175,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
+        <StoriesBar />
         {sortedChats.map((chat) => {
           const other = chat.members?.find((member) => member._id !== user._id) || chat.members?.[0];
           const title = chat.type === "group" ? chat.name : other?.displayName;
@@ -214,7 +229,8 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
                 await updateProfile({
                   displayName: profileForm.displayName,
                   bio: profileForm.bio,
-                  avatar: profileForm.avatar
+                  avatar: profileForm.avatar,
+                  storyPrivacy: { mode: storyPrivacyMode, allowedUsers: storyAllowed }
                 });
                 toast.success("Profile updated");
                 setProfileOpen(false);
@@ -238,6 +254,34 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
               <input value={profileForm.avatar} onChange={(e) => setProfileForm((x) => ({ ...x, avatar: e.target.value }))} className="w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10" placeholder="Avatar URL" />
               <textarea value={profileForm.bio} onChange={(e) => setProfileForm((x) => ({ ...x, bio: e.target.value }))} className="min-h-24 w-full rounded-xl bg-white/70 px-4 py-3 outline-none dark:bg-white/10" placeholder="Bio" />
               <input value={user.username} disabled className="w-full cursor-not-allowed rounded-xl bg-white/40 px-4 py-3 text-slate-500 outline-none dark:bg-white/5" />
+              <div className="rounded-xl bg-white/40 p-3 dark:bg-white/5">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">Status privacy</p>
+                <p className="mt-1 text-xs text-slate-500">Choose who can see your stories.</p>
+                <div className="mt-2 flex gap-2">
+                  <button type="button" onClick={() => setStoryPrivacyMode("public")} className={`rounded-lg px-3 py-2 text-sm ${storyPrivacyMode === "public" ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}>Public</button>
+                  <button type="button" onClick={() => setStoryPrivacyMode("selected")} className={`rounded-lg px-3 py-2 text-sm ${storyPrivacyMode === "selected" ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}>Selected</button>
+                </div>
+                {storyPrivacyMode === "selected" && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {contactOptions.length === 0 && <span className="text-xs text-slate-500">No chatted users yet.</span>}
+                    {contactOptions.map((m) => {
+                      const id = String(m._id || m);
+                      const label = m.displayName || m.username || id;
+                      const on = storyAllowed.includes(id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setStoryAllowed((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]))}
+                          className={`rounded-full px-3 py-1 text-xs ${on ? "bg-teal-500 text-white" : "bg-white/30 dark:bg-white/10"}`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
             <button disabled={savingProfile} className="mt-4 w-full rounded-xl bg-teal-500 px-4 py-3 font-semibold text-white disabled:opacity-60">
               Save

@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
-import { StoriesBar } from "./StoriesBar";
+// Stories live in Sidebar list now.
 
 export function ChatWindow({ onBack, className = "" }) {
   const { user } = useAuth();
@@ -529,8 +529,6 @@ export function ChatWindow({ onBack, className = "" }) {
         </div>
       )}
 
-      <StoriesBar />
-
       <div
         className="flex-1 overflow-y-auto p-3 sm:p-4"
         onDragOver={(e) => e.preventDefault()}
@@ -573,12 +571,7 @@ export function ChatWindow({ onBack, className = "" }) {
                     <button onClick={() => deleteMessageForMe(message._id)} title="Delete for me">Delete me</button>
                     {mine && <button onClick={() => deleteMessageForEveryone(message._id)} className="inline-flex items-center gap-1" title="Delete for everyone"><Trash2 size={12} /> All</button>}
                     <span>{format(new Date(message.createdAt), "HH:mm")}</span>
-                    {mine && (
-                      <CheckCheck
-                        size={13}
-                        style={{ color: message.seenBy?.length ? "#4da3ff" : "rgba(255,255,255,0.65)" }}
-                      />
-                    )}
+                    {mine && <CheckCheck size={13} />}
                   </div>
                   {reactingTo === message._id && (
                     <div className="mt-2 flex items-center gap-1">

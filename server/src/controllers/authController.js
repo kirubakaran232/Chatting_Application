@@ -66,6 +66,16 @@ export const updateProfile = asyncHandler(async (req, res) => {
   allowed.forEach((key) => {
     if (req.body[key] !== undefined) req.user[key] = req.body[key];
   });
+
+  if (req.body.storyPrivacy?.mode) {
+    req.user.storyPrivacy = req.user.storyPrivacy || { mode: "public", allowedUsers: [] };
+    req.user.storyPrivacy.mode = req.body.storyPrivacy.mode === "selected" ? "selected" : "public";
+    req.user.storyPrivacy.allowedUsers =
+      req.user.storyPrivacy.mode === "selected" && Array.isArray(req.body.storyPrivacy.allowedUsers)
+        ? req.body.storyPrivacy.allowedUsers
+        : [];
+  }
+
   req.user.profileComplete = Boolean(req.user.displayName && req.user.username);
   await req.user.save();
   res.json({ user: req.user });

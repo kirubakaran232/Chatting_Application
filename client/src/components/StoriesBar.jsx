@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext";
 export function StoriesBar() {
   const { user } = useAuth();
   const [stories, setStories] = useState([]);
-  const [active, setActive] = useState(null);
 
   useEffect(() => {
     api.get("/stories").then(({ data }) => setStories(data.stories));
@@ -22,7 +21,7 @@ export function StoriesBar() {
   return (
     <div className="flex gap-2 overflow-x-auto border-b border-black/5 px-3 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3">
       {stories.map((story) => (
-        <button key={story._id} onClick={() => setActive(story)} className="group relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border-2 border-pink-400 sm:h-16 sm:w-16">
+        <div key={story._id} className="group relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border-2 border-pink-400 sm:h-16 sm:w-16">
           {story.type === "text" ? (
             <span className="grid h-full place-items-center bg-teal-500 px-1 text-center text-xs font-semibold text-white">{story.text}</span>
           ) : story.type === "video" ? (
@@ -36,32 +35,8 @@ export function StoriesBar() {
               <Trash2 size={12} />
             </button>
           )}
-        </button>
-      ))}
-
-      {active && (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-black/70 p-4" onClick={() => setActive(null)}>
-          <div className="glass w-full max-w-md overflow-hidden rounded-2xl shadow-glow" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between gap-3 border-b border-black/5 p-3 dark:border-white/10">
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-slate-900 dark:text-white">{active.author?.displayName || "Story"}</p>
-                <p className="truncate text-xs text-slate-500">@{active.author?.username}</p>
-              </div>
-              <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setActive(null)}>Close</button>
-            </div>
-            {active.type === "text" ? (
-              <div className="grid min-h-80 place-items-center p-6 text-center" style={{ background: active.background || "#ff5258" }}>
-                <p className="text-lg font-semibold text-white">{active.text}</p>
-              </div>
-            ) : active.type === "video" ? (
-              <video src={active.media?.url} className="max-h-[70vh] w-full bg-black object-contain" controls autoPlay />
-            ) : (
-              <img src={active.media?.url} className="max-h-[70vh] w-full bg-black object-contain" alt="" />
-            )}
-            {active.text && active.type !== "text" && <div className="p-3 text-sm text-slate-700 dark:text-slate-200">{active.text}</div>}
-          </div>
         </div>
-      )}
+      ))}
     </div>
   );
 }

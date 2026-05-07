@@ -3,10 +3,12 @@ import { ChatProvider } from "../context/ChatContext";
 import { Sidebar } from "../components/Sidebar";
 import { ChatWindow } from "../components/ChatWindow";
 import { StoryComposer } from "../components/StoryComposer";
+import { useAuth } from "../context/AuthContext";
 
 function ResponsiveChatLayout({ dark, setDark, lockedOnly, setLockedOnly }) {
   const [mobileView, setMobileView] = useState("sidebar");
   const [storyOpen, setStoryOpen] = useState(false);
+  const { user } = useAuth();
 
   function openMobileChat() {
     setMobileView("chat");
@@ -45,7 +47,14 @@ function ResponsiveChatLayout({ dark, setDark, lockedOnly, setLockedOnly }) {
         onBack={closeMobileChat}
         className={mobileView === "chat" ? "flex" : "hidden md:flex"}
       />
-      <StoryComposer open={storyOpen} onClose={() => setStoryOpen(false)} />
+      <StoryComposer
+        open={storyOpen}
+        onClose={() => setStoryOpen(false)}
+        defaults={{
+          visibility: user?.storyPrivacy?.mode === "selected" ? "selected" : "public",
+          allowedUsers: user?.storyPrivacy?.allowedUsers || []
+        }}
+      />
     </div>
   );
 }

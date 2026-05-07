@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api";
 import { useChat } from "../context/ChatContext";
 
-export function StoryComposer({ open, onClose, onCreated }) {
+export function StoryComposer({ open, onClose, onCreated, defaults }) {
   const { uploadFile } = useChat();
   const [text, setText] = useState("");
   const [media, setMedia] = useState(null);
@@ -36,7 +36,9 @@ export function StoryComposer({ open, onClose, onCreated }) {
       type,
       text,
       media: media ? { url: media.url, publicId: media.publicId, format: media.format } : undefined,
-      background: "#ff5258"
+      background: "#ff5258",
+      visibility: defaults?.visibility,
+      allowedUsers: defaults?.allowedUsers
     });
     onCreated?.(data.story);
     setText("");
@@ -71,4 +73,3 @@ export function StoryComposer({ open, onClose, onCreated }) {
     </div>
   );
 }
-

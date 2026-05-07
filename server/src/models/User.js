@@ -14,6 +14,10 @@ const userSchema = new mongoose.Schema(
     lastSeen: Date,
     fcmTokens: [String],
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    storyPrivacy: {
+      mode: { type: String, enum: ["public", "selected"], default: "public" },
+      allowedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
+    },
     profileComplete: { type: Boolean, default: false }
   },
   { timestamps: true }
