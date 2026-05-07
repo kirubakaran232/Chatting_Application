@@ -172,7 +172,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
         </button>
         <button onClick={() => { setStoriesOnly(false); setPinnedOnly(true); setArchivedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${pinnedOnly ? "bg-teal-500 text-white" : ""}`}><Pin size={13} /> Pinned</button>
         <button onClick={() => { setStoriesOnly(false); setArchivedOnly(true); setPinnedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${archivedOnly ? "bg-teal-500 text-white" : ""}`}><Archive size={13} /> Archived</button>
-        <button onClick={() => { setStoriesOnly(false); setGroupsOnly(true); setArchivedOnly(false); setPinnedOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${groupsOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Groups</button>
+        {/* <button onClick={() => { setStoriesOnly(false); setGroupsOnly(true); setArchivedOnly(false); setPinnedOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${groupsOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Groups</button> */}
         <button onClick={() => { setStoriesOnly(true); setArchivedOnly(false); setPinnedOnly(false); setGroupsOnly(false); }} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 ${storiesOnly ? "bg-teal-500 text-white" : ""}`}><Users size={13} /> Stories</button>
       </div>
 
