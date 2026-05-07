@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
-export function StoriesBar() {
+export function StoriesBar({ onNewStory }) {
   const { user } = useAuth();
   const [stories, setStories] = useState([]);
   const [active, setActive] = useState(null);
@@ -21,7 +21,17 @@ export function StoriesBar() {
 
   return (
     <div className="px-2 pb-2">
-      <div className="text-xs uppercase tracking-wide text-slate-500">Recent updates</div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs uppercase tracking-wide text-slate-500">Recent updates</div>
+        <button
+          type="button"
+          onClick={() => onNewStory?.()}
+          className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/10"
+          title="New story"
+        >
+          New
+        </button>
+      </div>
       <div className="mt-2 space-y-2">
         {stories.map((story) => (
           <button

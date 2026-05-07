@@ -414,8 +414,9 @@ export function ChatWindow({ onBack, className = "" }) {
   }
 
   return (
-    <main className={`${className} min-w-0 flex-1 flex-col`}>
-      <div className="glass fixed top-0 left-0 right-0 z-30 flex min-h-16 w-full min-w-0 items-center gap-2 overflow-hidden border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2 md:static">
+    <main className={`${className} relative min-w-0 flex-1 flex-col`}>
+      {/* Sticky header stays visible on real mobile browsers without being hidden/clipped. */}
+      <div className="glass sticky top-0 z-30 flex min-h-16 w-full min-w-0 items-center gap-2 overflow-visible border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
         <button onClick={onBack} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden" title="Back to chats">
           <ArrowLeft size={20} />
         </button>
@@ -435,21 +436,24 @@ export function ChatWindow({ onBack, className = "" }) {
         <div className="relative shrink-0">
           <button onClick={() => setMenuOpen((open) => !open)} className="grid h-10 w-10 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="More"><MoreVertical size={19} /></button>
           {menuOpen && (
-            <div className="glass absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
-              <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
-                <span>Options</span>
-                <button onClick={() => setMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
+            <>
+              <button type="button" className="absolute inset-0 z-40 cursor-default" onClick={() => setMenuOpen(false)} aria-label="Close menu" />
+              <div className="glass absolute right-0 top-11 z-50 w-52 overflow-hidden rounded-xl p-1 text-sm shadow-xl">
+                <div className="mb-1 flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500">
+                  <span>Options</span>
+                  <button onClick={() => setMenuOpen(false)} className="rounded p-1 hover:bg-black/5 dark:hover:bg-white/10"><X size={14} /></button>
+                </div>
+                <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> {pinned ? "Unpin chat" : "Pin chat"}</button>
+                <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> {archived ? "Unarchive chat" : "Archive chat"}</button>
+                <button onClick={() => { setLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Lock size={16} /> Lock chat</button>
+                <button onClick={() => startOutgoingCall("video")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
+                <button onClick={() => startOutgoingCall("screen")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><ScreenShare size={16} /> Share screen</button>
+                {locked && <button onClick={() => { setRemoveLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Unlock size={16} /> Remove lock</button>}
+                <button onClick={() => aiAction("summarize")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Bot size={16} /> AI summary</button>
+                <button onClick={() => runMenuAction("report")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Flag size={16} /> Report chat</button>
+                {activeChat.type === "direct" && <button onClick={() => runMenuAction("block")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Ban size={16} /> Block user</button>}
               </div>
-              <button onClick={() => runMenuAction("pin")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Pin size={16} /> {pinned ? "Unpin chat" : "Pin chat"}</button>
-              <button onClick={() => runMenuAction("archive")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Archive size={16} /> {archived ? "Unarchive chat" : "Archive chat"}</button>
-              <button onClick={() => { setLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Lock size={16} /> Lock chat</button>
-              <button onClick={() => startOutgoingCall("video")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><Video size={16} /> Video call</button>
-              <button onClick={() => startOutgoingCall("screen")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 sm:hidden"><ScreenShare size={16} /> Share screen</button>
-              {locked && <button onClick={() => { setRemoveLockModalOpen(true); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Unlock size={16} /> Remove lock</button>}
-              <button onClick={() => aiAction("summarize")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Bot size={16} /> AI summary</button>
-              <button onClick={() => runMenuAction("report")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Flag size={16} /> Report chat</button>
-              {activeChat.type === "direct" && <button onClick={() => runMenuAction("block")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10"><Ban size={16} /> Block user</button>}
-            </div>
+            </>
           )}
         </div>
       </div>
@@ -532,7 +536,7 @@ export function ChatWindow({ onBack, className = "" }) {
       )}
 
       <div
-        className="flex-1 overflow-y-auto p-3 pt-20 sm:p-4 md:pt-4"
+        className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -644,7 +648,7 @@ export function ChatWindow({ onBack, className = "" }) {
         </div>
       )}
 
-      <form onSubmit={submit} className="glass m-2 flex flex-wrap items-center gap-2 rounded-2xl p-2 sm:m-3 sm:flex-nowrap sm:p-3">
+      <form onSubmit={submit} className="glass m-2 shrink-0 flex flex-wrap items-center gap-2 rounded-2xl p-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] sm:m-3 sm:flex-nowrap sm:p-3">
         {recording && (
           <div className="flex w-full items-center justify-between rounded-xl bg-black/10 px-3 py-2 text-xs dark:bg-white/10 sm:hidden">
             <span className="inline-flex items-center gap-2">

@@ -70,7 +70,8 @@ export function AppShell() {
 
   return (
     <ChatProvider>
-      <div className="h-[100svh] p-0 text-slate-800 dark:text-slate-100 md:h-[100dvh] md:p-4">
+      {/* Use dvh on mobile to avoid extra blank space from browser UI bars */}
+      <div className="h-[100dvh] p-0 text-slate-800 dark:text-slate-100 md:p-4">
         <ResponsiveChatLayout dark={dark} setDark={setDark} lockedOnly={lockedOnly} setLockedOnly={setLockedOnly} />
       </div>
     </ChatProvider>

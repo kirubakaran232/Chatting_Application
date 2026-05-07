@@ -265,7 +265,7 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
-        {storiesOnly ? <StoriesBar /> : null}
+        {storiesOnly ? <StoriesBar onNewStory={onNewStory} /> : null}
         {!storiesOnly &&
           sortedChats.map((chat) => {
             const other =
