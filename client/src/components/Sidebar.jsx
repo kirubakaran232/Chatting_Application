@@ -60,7 +60,16 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
   return (
     <aside className={`glass h-full w-full flex-col overflow-hidden rounded-none border-r border-white/40 md:w-96 md:rounded-l-2xl ${className}`}>
       <div className="flex items-center gap-3 border-b border-black/5 p-4 dark:border-white/10">
-        <img className="h-11 w-11 rounded-full object-cover" src={user.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`} alt="" />
+        <div className="relative">
+          <img className="h-11 w-11 rounded-full object-cover" src={user.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${user.displayName}`} alt="" />
+          <button
+            onClick={() => onNewStory?.()}
+            className="absolute -bottom-1 -right-1 hidden h-6 w-6 items-center justify-center rounded-full bg-teal-500 text-white shadow-lg md:flex"
+            title="New story"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-slate-900 dark:text-white">{user.displayName}</p>
           <p className="truncate text-sm text-slate-500">@{user.username}</p>
@@ -69,7 +78,19 @@ export function Sidebar({ dark, setDark, lockedOnly, setLockedOnly, onOpenChat, 
           <Pencil size={18} />
         </button>
         <div className="relative">
-          <button className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10" onClick={() => setPlusMenuOpen((v) => !v)} title="Create">
+          {/* Desktop: avatar + pink add-story badge. Mobile: + is only new chat */}
+          <button
+            className="rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 md:hidden"
+            onClick={() => searchRef.current?.focus()}
+            title="New chat"
+          >
+            <Plus size={18} />
+          </button>
+          <button
+            className="relative hidden rounded-lg p-2 hover:bg-black/5 dark:hover:bg-white/10 md:inline-flex"
+            onClick={() => setPlusMenuOpen((v) => !v)}
+            title="Create"
+          >
             <Plus size={18} />
           </button>
           {plusMenuOpen && (

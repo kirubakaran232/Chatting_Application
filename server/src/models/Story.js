@@ -10,6 +10,8 @@ const storySchema = new mongoose.Schema(
       publicId: String,
       format: String
     },
+    visibility: { type: String, enum: ["public", "selected"], default: "public" },
+    allowedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     background: String,
     viewers: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, at: Date }],
     reactions: [{ user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, emoji: String, at: Date }],
