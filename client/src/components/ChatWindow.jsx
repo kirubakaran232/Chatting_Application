@@ -415,14 +415,16 @@ export function ChatWindow({ onBack, className = "" }) {
 
   return (
     <main className={`${className} min-w-0 flex-1 flex-col`}>
-      <div className="glass flex min-h-16 items-center gap-2 border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3">
+      <div className="glass flex min-h-16 w-full min-w-0 items-center gap-2 overflow-hidden border-b border-black/5 px-2 py-2 dark:border-white/10 sm:gap-3 sm:px-4 sm:py-3 max-[380px]:px-2 max-[380px]:py-2">
         <button onClick={onBack} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10 md:hidden" title="Back to chats">
           <ArrowLeft size={20} />
         </button>
-        <img className="h-10 w-10 shrink-0 rounded-full object-cover sm:h-11 sm:w-11" src={activeChat.avatar || other?.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${title}`} alt="" />
-        <div className="min-w-0 flex-1 overflow-hidden">
-          <p className="truncate font-semibold text-slate-900 dark:text-white">{title}</p>
-          <p className="truncate text-sm text-slate-500">{typingUsers[activeChat._id] ? `${typingUsers[activeChat._id].displayName} is typing...` : activeChat.type}</p>
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden sm:gap-3 max-[380px]:gap-1.5">
+          <img className="h-9 w-9 shrink-0 rounded-full object-cover sm:h-11 sm:w-11 max-[380px]:h-9 max-[380px]:w-9" src={activeChat.avatar || other?.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${title}`} alt="" />
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <p className="truncate text-[15px] font-semibold text-slate-900 dark:text-white sm:text-base">{title}</p>
+            <p className="truncate text-xs text-slate-500 sm:text-sm">{typingUsers[activeChat._id] ? `${typingUsers[activeChat._id].displayName} is typing...` : activeChat.type}</p>
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button onClick={() => startOutgoingCall("audio")} className="grid h-10 w-10 shrink-0 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10" title="Voice call"><Phone size={19} /></button>
