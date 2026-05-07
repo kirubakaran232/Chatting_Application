@@ -46,7 +46,10 @@ export function ChatWindow({ onBack, className = "" }) {
   const remoteVideoRef = useRef(null);
 
   const other = activeChat?.members?.find((member) => member._id !== user._id) || activeChat?.members?.[0];
-  const title = activeChat?.type === "group" ? activeChat?.name : other?.displayName;
+  const title =
+    activeChat?.type === "group"
+      ? activeChat?.name
+      : (other?.displayName || other?.username || other?.name);
   const locked = activeChat?.lockedBy?.some((item) => item.user === user._id || item.user?._id === user._id);
   const archived = activeChat?.archivedBy?.some((id) => id === user._id || id?._id === user._id);
   const pinned = activeChat?.pinnedBy?.some((id) => id === user._id || id?._id === user._id);
